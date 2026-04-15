@@ -193,7 +193,7 @@ Update this section at the start/end of each build session.
 
 | Session | Scope | Status |
 |---|---|---|
-| 1 | DB, models, migrations | not started |
+| 1 | DB, models, migrations | done |
 | 2 | Ingestion, webhooks, thread grouping | not started |
 | 3 | Agent core, tools, prompt assembly | not started |
 | 4 | Feedback loop, reply sending | not started |
