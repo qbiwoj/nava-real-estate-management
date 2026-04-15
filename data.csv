@@ -1,0 +1,17 @@
+id,kanal,od,temat,tresc,uwagi
+1,Email,jan.kowalski@gmail.com,Zepsuta brama — pilne,"Brama do garażu podziemnego jest otwarta od 3 dni. Może wejść każdy. Dwa razy dzwoniłem, brak odpowiedzi.",
+2,SMS,+48 601 234 567,—,"Hej, przecieka sufit na klatce schodowej 3. piętro, robi się coraz gorzej",
+3,Email,m.wisniewska@wp.pl,Brak rozliczenia za marzec,"Ani ja, ani sąsiadka z 14B nie dostałyśmy rozliczenia za marzec. Proszę o przesłanie.",
+4,SMS,+48 799 112 233,—,"Mieszkanie 4B znowu wynajmuje na Airbnb. To jest niezgodne z regulaminem wspólnoty. Co z tym będziecie robić?",
+5,Email,zarzad@wspolnota-mokotow.pl,Decyzja zarządu — remont dachu,"Otrzymaliśmy trzy oferty na remont dachu. Zarząd musi podjąć decyzję przed kwietniowym zebraniem. Proszę o podsumowanie i rekomendację.",
+6,SMS,+48 512 887 001,—,Pani Ania nie odpowiada od tygodnia na moje maile w sprawie funduszu remontowego,
+7,Email,p.nowak@gmail.com,Skargi na hałas — mieszkanie 12A,"To już czwarta skarga na to mieszkanie. Głośna muzyka każdą noc po północy. Nic nie zostało zrobione.",
+8,SMS,+48 604 332 119,—,"Winda znowu zepsuta w budynku B. Trzeci raz w tym miesiącu.",
+9,Email,r.dabrowska@onet.pl,Odnowienie ubezpieczenia,"Ubezpieczenie budynku kończy się 30 kwietnia. Nie widzę tego w agendzie zebrania. Kto się tym zajmuje?",
+10,SMS,+48 733 201 445,—,"Czy ktoś może potwierdzić, że moja wpłata na fundusz eksploatacyjny dotarła? Zapłaciłem 3 tygodnie temu.",
+11,Email,jan.kowalski@gmail.com,RE: Zepsuta brama,"Piszę PO RAZ TRZECI. Brama nadal otwarta. Jeśli do końca tygodnia nic się nie zmieni, zgłaszam sprawę do nadzoru budowlanego.",ESKALACJA — powiązane z id=1
+12,SMS,+48 601 234 567,—,"O tej przeciekającej klatce schodowej co pisałem — teraz leje się na skrzynkę elektryczną. To chyba groźne?",ESKALACJA — powiązane z id=2
+13,Voicemail,+48 888 100 200,—,"[Transkrypcja Whisper ~72%] Dzień dobry, dzwonię... chyba Lewandowska z... [nieczytelne]... bo proszę pani, w piwnicy jest woda na... nie wiem... dwadzieścia centymetrów? Może więcej. I śmierdzi. Proszę o... [nieczytelne]... jak najszybciej.",Niska pewność transkrypcji (~72%)
+14,Email,biuro@bud-serwis.pl,Faktura nr FS/2024/0892,"W załączniku przesyłam fakturę za przegląd instalacji gazowej (budynki A–C). Kwota 8.200 zł netto. Proszę o potwierdzenie lub zgłoszenie korekt w ciągu 7 dni roboczych.",DOSTAWCA — nie mieszkaniec
+15,Email,tomek.zielinski@outlook.com,Quick question about the parking spot,"Hi, I just moved in (apt 7C) and my Polish is still not great. Is there a way to rent an additional parking spot in the garage? Also the intercom doesn't seem to work for my unit. Thanks!",Wiadomość po angielsku
+16,SMS,+48 606 999 111,—,"Cześć, z tego co wiem to pani z 8A też ma zalany sufit, chyba ten sam problem co u mnie na 3 piętrze. Może warto sprawdzić całą pionówkę?",Powiązane z id=2 i id=12
