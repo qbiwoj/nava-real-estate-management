@@ -235,3 +235,74 @@ async def test_ingest_voicemail_with_transcription_embeds_transcription(session)
                 transcription_confidence=0.72,
             )
         mock_embed.assert_called_once_with("Water in basement")
+
+
+# ---------------------------------------------------------------------------
+# Step 7 — End-to-end thread grouping
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_follow_up_message_grouped_into_same_thread(session):
+    """
+    First message → creates thread.
+    Follow-up from same sender on same topic → joins thread.
+    Unrelated message from same sender → new thread.
+    """
+    gate_vec = [1.0] + [0.0] * 1535
+    gate_vec2 = [0.999] + [0.001 / 1535] * 1535   # very close
+    park_vec = [0.0, 1.0] + [0.0] * 1534           # orthogonal
+
+    async with session as s:
+        with patch(
+            "app.services.ingestion._embeddings.generate_embedding",
+            new=AsyncMock(side_effect=[gate_vec, gate_vec2, park_vec]),
+        ):
+            msg1, thread1 = await ingest_message(
+                s, channel="email", raw_content="Gate broken first time",
+                sender_ref="jan@gmail.com",
+            )
+            await s.flush()
+
+            msg2, thread2 = await ingest_message(
+                s, channel="email", raw_content="Gate still broken",
+                sender_ref="jan@gmail.com",
+            )
+            await s.flush()
+
+            msg3, thread3 = await ingest_message(
+                s, channel="email", raw_content="Where is my parking spot?",
+                sender_ref="jan@gmail.com",
+            )
+            await s.commit()
+
+    assert thread1.id == thread2.id, "Follow-up should join existing thread"
+    assert thread3.id != thread1.id, "Unrelated topic should create new thread"
+
+
+@pytest.mark.asyncio
+async def test_supplier_and_resident_never_grouped(session):
+    """Supplier invoice should not merge with a resident thread even if vectors are identical."""
+    vec = [0.5] * 1536
+
+    async with session as s:
+        with patch(
+            "app.services.ingestion._embeddings.generate_embedding",
+            new=AsyncMock(return_value=vec),
+        ):
+            msg_resident, t_resident = await ingest_message(
+                s, channel="email", raw_content="Gate broken",
+                sender_ref="jan@gmail.com",
+            )
+            await s.flush()
+
+            msg_supplier, t_supplier = await ingest_message(
+                s, channel="email",
+                raw_content="Invoice FS/2024/0892 for gas inspection",
+                sender_ref="biuro@bud-serwis.pl",
+            )
+            await s.commit()
+
+    assert msg_resident.sender_type == SenderType.resident
+    assert msg_supplier.sender_type == SenderType.supplier
+    assert t_supplier.id != t_resident.id
