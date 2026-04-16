@@ -70,8 +70,6 @@ export default function QueuePage() {
   const [priority, setPriority] = useState<Priority | ''>('')
   const [category, setCategory] = useState<Category | ''>('')
 
-  // Voice briefing state
-  const [briefingMode, setBriefingMode] = useState<'text' | 'audio'>('text')
   const [briefingLoading, setBriefingLoading] = useState(false)
   const [briefingText, setBriefingText] = useState<string | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
@@ -83,21 +81,16 @@ export default function QueuePage() {
     setBriefingText(null)
     setAudioUrl(null)
     try {
-      if (briefingMode === 'text') {
-        const data = await getBriefingText()
-        setBriefingText(data.text)
-      } else {
+      const data = await getBriefingText()
+      setBriefingText(data.text)
         try {
           const url = await getBriefingAudio()
           setAudioUrl(url)
         } catch {
           // Audio unavailable (e.g. missing API key) — fall back to text
-          const data = await getBriefingText()
-          setBriefingText(data.text)
-          setBriefingError('Audio niedostępne — wyświetlam tekst.')
+          setBriefingError('Audio niedostępne.')
         }
-      }
-    } catch (e) {
+      } catch (e) {
       setBriefingError(e instanceof Error ? e.message : 'Błąd briefingu.')
     } finally {
       setBriefingLoading(false)
@@ -161,23 +154,8 @@ export default function QueuePage() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-semibold">Panel administratora</h1>
         <div className="flex items-center gap-2">
-          {/* Mode toggle */}
-          <div className="flex rounded border overflow-hidden text-sm">
-            <button
-              className={`px-3 py-1 ${briefingMode === 'text' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}
-              onClick={() => setBriefingMode('text')}
-            >
-              Tekst
-            </button>
-            <button
-              className={`px-3 py-1 ${briefingMode === 'audio' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}
-              onClick={() => setBriefingMode('audio')}
-            >
-              Audio
-            </button>
-          </div>
           <Button variant="outline" size="sm" onClick={handleBriefing} disabled={briefingLoading}>
-            {briefingLoading ? 'Generuję…' : 'Briefing'}
+            {briefingLoading ? 'Generuję…' : 'Wygeneruj podsumowanie'}
           </Button>
           <Button variant="outline" size="sm" onClick={() => { resetForm(); setShowForm(true) }}>
             + Dodaj wiadomość
