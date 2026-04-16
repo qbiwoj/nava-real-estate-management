@@ -192,16 +192,20 @@ export default function ThreadPage() {
           <div className="border rounded-lg overflow-hidden">
             <Spinner text="Agent analizuje wiadomości…" />
           </div>
-        ) : !decision && thread.status === 'new' ? (
-          <div className="border rounded-lg overflow-hidden">
-            <Spinner text="Agent analizuje wiadomości…" />
-          </div>
         ) : !decision ? (
           <div className="border rounded-lg p-4 text-center text-sm text-muted-foreground">
             Agent jeszcze nie działał.
           </div>
         ) : (
           <div className="border rounded-lg overflow-hidden">
+            {/* Action */}
+            <div className="px-4 py-3 border-b bg-muted/50 flex items-center gap-2">
+              <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Działanie:</span>
+              <Badge className={ACTION_CLASS[decision.action]}>
+                {ACTION_LABEL[decision.action]}
+              </Badge>
+            </div>
+
             {/* Rationale */}
             <div className="px-4 py-3 bg-muted/30">
               <div className="prose prose-sm max-w-none text-foreground

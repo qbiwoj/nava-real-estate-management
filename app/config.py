@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
     ELEVENLABS_API_KEY: str = ""
-MODEL_ID: str = "claude-sonnet-4-6"
+    MODEL_ID: str = "claude-sonnet-4-6"
 
 
 settings = Settings()
