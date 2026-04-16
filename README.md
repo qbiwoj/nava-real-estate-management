@@ -89,3 +89,34 @@ GET  /health                     # liveness check
 # Wymaga TEST_DATABASE_URL w .env wskazującego na osobną bazę danych
 uv run pytest --tb=short -q
 ```
+
+---
+
+## Kluczowe decyzje projektowe
+
+- **pgvector do grupowania wątków** — zamiast reguł opartych na nadawcy czy temacie, wiadomości są grupowane przez podobieństwo embeddingów (cosine distance). Dzięki temu SMS od mieszkańca i jego późniejszy email o tym samym problemie trafiają do jednego wątku automatycznie.
+- **Few-shot feedback loop zamiast fine-tuningu** — każda korekta admina jest embeddowana i wstrzykiwana do promptu agenta przy kolejnym uruchomieniu. Zero cold-startu, zero drogiego fine-tuningu.
+- **Claude Sonnet do decyzji agenta, Haiku do briefingu głosowego** — świadomy kompromis kosztowy: Sonnet gdzie potrzebna jakość rozumowania, Haiku gdzie wystarczy synteza tekstu.
+- **Prompt caching na statycznym bloku systemowym** — kontekst nieruchomości i instrukcje agenta są zawsze cache'owane, co redukuje koszt każdego wywołania o ~60–80% input tokens.
+- **Async wszędzie** — FastAPI + SQLAlchemy async + BackgroundTask, żeby ingestia wiadomości wracała natychmiast (202), a agent działa w tle.
+
+---
+
+## Znane braki
+
+- **Whisper nie jest zintegrowany** — transkrypcje voicemaili w danych seedowych są wstępnie przygotowane. Produkcyjna integracja wymagałaby podłączenia Whisper API przy ingestii kanału `voicemail`.
+- **Brak prawdziwych integracji kanałów** — email i SMS wchodzą przez ręczne wywołania webhooków. Brak podłączenia SendGrid / Twilio.
+- **Jeden tenant** — architektura zakłada jedną nieruchomość. Multi-tenant wymaga warstwy izolacji.
+- **Voice tylko w jedną stronę** — briefing głosowy jest jednostronny (TTS). Brak voice input ani konwersacyjnego agenta głosowego.
+
+---
+
+## Koszty API
+
+Łączny koszt budowy i testowania demo: **~$26**
+
+| Serwis | Koszt | Na co |
+|---|---|---|
+| Anthropic (Claude) | ~$25 | Decyzje agenta (Sonnet) + briefing głosowy (Haiku) + seed 16 wątków |
+| OpenAI | ~$0.00 | Embeddingi `text-embedding-3-small` — $0.02/1M tokenów, przy 16 wiadomościach pomijalny koszt |
+| ElevenLabs | $5 | Pay-as-you-go (minimalny próg), synteza mowy dla briefingu głosowego |
