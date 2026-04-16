@@ -9,7 +9,9 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { sendDemoMessage } from '@/lib/api'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { sendDemoMessage, getBriefingText, getBriefingAudio } from '@/lib/api'
 import type { Status, Priority, Category, Thread } from '@/lib/types'
 
 const PRIORITY_CLASS: Record<Priority, string> = {
@@ -67,6 +69,40 @@ export default function QueuePage() {
   const [priority, setPriority] = useState<Priority | ''>('')
   const [category, setCategory] = useState<Category | ''>('')
 
+  // Voice briefing state
+  const [briefingMode, setBriefingMode] = useState<'text' | 'audio'>('text')
+  const [briefingLoading, setBriefingLoading] = useState(false)
+  const [briefingText, setBriefingText] = useState<string | null>(null)
+  const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [briefingError, setBriefingError] = useState<string | null>(null)
+
+  async function handleBriefing() {
+    setBriefingLoading(true)
+    setBriefingError(null)
+    setBriefingText(null)
+    setAudioUrl(null)
+    try {
+      if (briefingMode === 'text') {
+        const data = await getBriefingText()
+        setBriefingText(data.text)
+      } else {
+        try {
+          const url = await getBriefingAudio()
+          setAudioUrl(url)
+        } catch {
+          // Audio unavailable (e.g. missing API key) — fall back to text
+          const data = await getBriefingText()
+          setBriefingText(data.text)
+          setBriefingError('Audio niedostępne — wyświetlam tekst.')
+        }
+      }
+    } catch (e) {
+      setBriefingError(e instanceof Error ? e.message : 'Błąd briefingu.')
+    } finally {
+      setBriefingLoading(false)
+    }
+  }
+
   // Demo message form state
   const [showForm, setShowForm] = useState(false)
   const [channel, setChannel] = useState<'email' | 'sms'>('email')
@@ -117,10 +153,47 @@ export default function QueuePage() {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-semibold">Panel administratora</h1>
-        <Button variant="outline" size="sm" onClick={() => { resetForm(); setShowForm(true) }}>
-          + Dodaj wiadomość
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Mode toggle */}
+          <div className="flex rounded border overflow-hidden text-sm">
+            <button
+              className={`px-3 py-1 ${briefingMode === 'text' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}
+              onClick={() => setBriefingMode('text')}
+            >
+              Tekst
+            </button>
+            <button
+              className={`px-3 py-1 ${briefingMode === 'audio' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}
+              onClick={() => setBriefingMode('audio')}
+            >
+              Audio
+            </button>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleBriefing} disabled={briefingLoading}>
+            {briefingLoading ? 'Generuję…' : 'Briefing'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => { resetForm(); setShowForm(true) }}>
+            + Dodaj wiadomość
+          </Button>
+        </div>
       </div>
+
+      {/* Briefing result */}
+      {briefingError && (
+        <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {briefingError}
+        </div>
+      )}
+      {briefingText && (
+        <div className="mb-4 rounded border bg-muted/40 px-4 py-3 text-sm prose prose-sm max-w-none">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{briefingText}</ReactMarkdown>
+        </div>
+      )}
+      {audioUrl && (
+        <div className="mb-4">
+          <audio controls autoPlay src={audioUrl} className="w-full" />
+        </div>
+      )}
 
       {/* Demo message modal */}
       {showForm && (

@@ -21,12 +21,13 @@ _PRIORITY_ORDER = {
     Priority.low: 3,
 }
 
-_BRIEFING_SYSTEM_PROMPT = """You are a voice assistant briefing a property manager on their current message queue.
-Generate a concise spoken briefing (under 60 seconds when read aloud).
-Address the listener as "you". Read through open issues in priority order.
-For each issue mention: the category, how many messages, and a short summary.
-Speak naturally — this will be read aloud by a text-to-speech system.
-End with a short count of total open items."""
+_BRIEFING_SYSTEM_PROMPT = """Jesteś asystentem głosowym informującym zarządcę nieruchomości o aktualnej kolejce wiadomości.
+Wygeneruj zwięzłe podsumowanie mówione (poniżej 60 sekund podczas czytania na głos).
+Omawiaj otwarte sprawy według priorytetu. 
+Dla każdej sprawy podaj: kategorię, liczbę wiadomości i krótkie podsumowanie.
+Mów naturalnie — tekst zostanie odczytany przez system zamiany tekstu na mowę.
+Zakończ krótkim podsumowaniem łącznej liczby otwartych spraw.
+Odpowiadaj wyłącznie po polsku."""
 
 
 async def generate_queue_briefing(
@@ -43,7 +44,7 @@ async def generate_queue_briefing(
     threads = list(result.scalars().all())
 
     if not threads:
-        return "You have no open items in the queue right now.", []
+        return "Brak otwartych spraw w kolejce.", []
 
     threads.sort(key=lambda t: (_PRIORITY_ORDER.get(t.priority, 99), t.created_at))
 
@@ -75,7 +76,7 @@ async def generate_queue_briefing(
     user_content = f"Open threads ({len(threads)} total):\n" + "\n".join(lines)
 
     response = await anthropic_client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-haiku-4-5-20251001",
         max_tokens=512,
         system=[
             {

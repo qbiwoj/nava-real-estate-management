@@ -78,3 +78,17 @@ export function sendDemoMessage(payload: DemoMessagePayload): Promise<{ message_
   const { channel, ...rest } = payload
   return apiFetch(`/webhooks/${channel}`, { method: 'POST', body: JSON.stringify(rest) })
 }
+
+export function getBriefingText(): Promise<{ text: string; threads_covered: string[] }> {
+  return apiFetch('/voice/briefing-text')
+}
+
+export async function getBriefingAudio(): Promise<string> {
+  const res = await fetch('/api/v1/voice/briefing-audio')
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText)
+    throw new Error(`${res.status} ${text}`)
+  }
+  const blob = await res.blob()
+  return URL.createObjectURL(blob)
+}
