@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip } from '@/components/ui/tooltip'
+import { Spinner } from '@/components/ui/spinner'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Action, Priority, Status, Message } from '@/lib/types'
@@ -168,26 +169,32 @@ export default function ThreadPage() {
 
       {/* Agent Decision */}
       <section className="space-y-3">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Decyzja agenta</h2>
-          {decision && (
-            <Tooltip
-              content={`Model: ${decision.model_id} · Koszt: $${decision.cost_usd?.toFixed(4)}`}
-            />
-          )}
+        <div className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Decyzja agenta</h2>
+            {decision && (
+              <Tooltip
+                content={`Model: ${decision.model_id} · Koszt: $${decision.cost_usd?.toFixed(4)}`}
+              />
+            )}
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => runAgent.mutate()}
+            disabled={runAgent.isPending}
+          >
+            {decision ? 'Uruchom ponownie' : 'Uruchom'}
+          </Button>
         </div>
 
-        {!decision ? (
-          <div className="border rounded-lg p-4 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Agent jeszcze nie działał.</p>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => runAgent.mutate()}
-              disabled={runAgent.isPending}
-            >
-              {runAgent.isPending ? 'Uruchamianie…' : 'Uruchom agenta'}
-            </Button>
+        {runAgent.isPending ? (
+          <div className="border rounded-lg overflow-hidden">
+            <Spinner text="Agent analizuje wiadomości…" />
+          </div>
+        ) : !decision ? (
+          <div className="border rounded-lg p-4 text-center text-sm text-muted-foreground">
+            Agent jeszcze nie działał.
           </div>
         ) : (
           <div className="border rounded-lg overflow-hidden">
