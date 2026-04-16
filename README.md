@@ -49,7 +49,7 @@ Panel admina będzie dostępny pod adresem **http://localhost:5173** z 16 wstęp
 | `DATABASE_URL` | tak | `postgresql+asyncpg://nava:nava@localhost:5432/nava` (domyślne wartości z docker-compose) |
 | `ANTHROPIC_API_KEY` | tak | Claude API — decyzje agenta i briefing głosowy |
 | `OPENAI_API_KEY` | tak | Embeddingi do grupowania wątków i few-shot feedback |
-| `ELEVENLABS_API_KEY` | nie | Voice inbound webhook (opcjonalne) |
+| `ELEVENLABS_API_KEY` | nie | Voice inbound webhook — włącza przycisk "Wygeneruj przegląd" w panelu admina (opcjonalne) |
 
 ---
 

@@ -86,7 +86,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-xl font-semibold mb-6">Analityki</h1>
+      <h1 className="text-xl font-semibold mb-6">Analityka</h1>
 
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4 mb-8">
