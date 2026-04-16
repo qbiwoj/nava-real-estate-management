@@ -1,4 +1,4 @@
-# Strategia rozwoju — Nava Real Estate Management
+# Strategia na przyszłość
 
 ## Kolejne kroki
 
@@ -14,8 +14,8 @@ Panel admina to tylko jedna strona równania. Aplikacja dla mieszkańców umożl
 ### 4. Obsługa wielu nieruchomości (multi-tenant)
 Obecna architektura zakłada jedną nieruchomość. Dodanie warstwy tenant pozwoliłoby obsługiwać wiele budynków lub zarządców z jednej instancji — z izolacją danych, osobnymi konfiguracjami agenta i raportowaniem per-nieruchomość.
 
-### 5. Analityka i raporty
-Endpoint `/admin/stats` istnieje, ale nie ma jeszcze widoku w UI. Dashboard z trendami (najczęstsze kategorie, czas reakcji, wskaźnik eskalacji) daje zarządcy realny wgląd w operacje i pomaga uzasadnić inwestycję w system.
+### 5. ~~Analityka i raporty~~ ✓ Zrealizowane
+Dashboard z metrykami operacyjnymi został zaimplementowany.
 
 ### 6. Integracje z zewnętrznymi kanałami
 Obecne webhooki wymagają ręcznego wywołania. Podłączenie prawdziwych dostawców (SendGrid dla emaila, Twilio dla SMS) zamknęłoby pętlę — wiadomości wpływają automatycznie, odpowiedzi są wysyłane bez opuszczania systemu.
