@@ -155,7 +155,7 @@ export default function QueuePage() {
         <h1 className="text-xl font-semibold">Panel administratora</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleBriefing} disabled={briefingLoading}>
-            {briefingLoading ? 'Generuję…' : 'Wygeneruj podsumowanie'}
+            {briefingLoading ? 'Generuję…' : 'Wygeneruj przegląd'}
           </Button>
           <Button variant="outline" size="sm" onClick={() => { resetForm(); setShowForm(true) }}>
             + Dodaj wiadomość
