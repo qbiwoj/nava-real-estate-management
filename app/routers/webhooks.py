@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
 from app.schemas.webhooks import EmailWebhookPayload, SMSWebhookPayload, VoicemailWebhookPayload
 from app.services.ingestion import ingest_message
+from app.tasks.agent_runner import run_agent_background
 
 router = APIRouter(prefix="/api/v1/webhooks", tags=["webhooks"])
 
@@ -11,6 +12,7 @@ router = APIRouter(prefix="/api/v1/webhooks", tags=["webhooks"])
 @router.post("/email", status_code=202)
 async def receive_email(
     payload: EmailWebhookPayload,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
 ):
     msg, thread = await ingest_message(
@@ -22,13 +24,14 @@ async def receive_email(
         received_at=payload.received_at,
     )
     await session.commit()
-    # TODO Session 3: trigger agent background task
+    background_tasks.add_task(run_agent_background, thread.id)
     return {"message_id": str(msg.id), "thread_id": str(thread.id)}
 
 
 @router.post("/sms", status_code=202)
 async def receive_sms(
     payload: SMSWebhookPayload,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
 ):
     msg, thread = await ingest_message(
@@ -39,12 +42,14 @@ async def receive_sms(
         received_at=payload.received_at,
     )
     await session.commit()
+    background_tasks.add_task(run_agent_background, thread.id)
     return {"message_id": str(msg.id), "thread_id": str(thread.id)}
 
 
 @router.post("/voicemail", status_code=202)
 async def receive_voicemail(
     payload: VoicemailWebhookPayload,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
 ):
     msg, thread = await ingest_message(
@@ -57,4 +62,5 @@ async def receive_voicemail(
         transcription_confidence=payload.transcription_confidence,
     )
     await session.commit()
+    background_tasks.add_task(run_agent_background, thread.id)
     return {"message_id": str(msg.id), "thread_id": str(thread.id)}

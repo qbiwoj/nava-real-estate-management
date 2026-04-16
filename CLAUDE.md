@@ -195,7 +195,7 @@ Update this section at the start/end of each build session.
 |---|---|---|
 | 1 | DB, models, migrations | done |
 | 2 | Ingestion, webhooks, thread grouping | done |
-| 3 | Agent core, tools, prompt assembly | not started |
+| 3 | Agent core, tools, prompt assembly | done |
 | 4 | Feedback loop, reply sending | not started |
 | 5 | Voice briefing + frontend UI | not started |
 | 6 | Seed data, polish, demo hardening | not started |

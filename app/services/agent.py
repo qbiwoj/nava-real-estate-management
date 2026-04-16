@@ -1,0 +1,217 @@
+from __future__ import annotations
+
+import logging
+import uuid
+
+import anthropic
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.config import settings
+from app.models import AgentDecision, Message, Thread, ThreadMessage
+from app.models.enums import Action, Status
+from app.services.feedback import format_few_shot_examples, retrieve_similar_corrections
+from app.services.tools import (
+    TOOLS,
+    classify_and_set_category,
+    draft_reply,
+    escalate,
+    group_messages,
+    mark_no_action,
+    search_similar_threads,
+)
+
+logger = logging.getLogger(__name__)
+
+anthropic_client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+_STATIC_SYSTEM_PROMPT = """You are an AI property management assistant for a residential building in Warsaw, Poland.
+You receive messages from residents (email/SMS/voicemail), suppliers, and the building board.
+Your job is to classify incoming messages, group related threads, draft replies, or escalate urgent issues.
+Always respond in the same language as the resident's message.
+Property context: 40-60 messages/day, mix of Polish and English residents.
+Available actions: classify_and_set_category, group_messages, draft_reply, escalate, search_similar_threads, mark_no_action.
+Use the tools to take action, then stop when you have completed all necessary actions."""
+
+_TOOL_DISPATCH = {
+    "classify_and_set_category": classify_and_set_category,
+    "group_messages": group_messages,
+    "draft_reply": draft_reply,
+    "escalate": escalate,
+    "search_similar_threads": search_similar_threads,
+    "mark_no_action": mark_no_action,
+}
+
+
+def _determine_final_action(tools_called: list[str]) -> Action:
+    """Infer the agent's final action from which tools fired during the loop."""
+    if "escalate" in tools_called:
+        return Action.escalate
+    if "draft_reply" in tools_called:
+        return Action.draft_reply
+    if "mark_no_action" in tools_called:
+        return Action.no_action
+    return Action.group_only
+
+
+async def assemble_system_prompt(
+    thread_id: uuid.UUID,
+    session: AsyncSession,
+) -> list[dict]:
+    """Return a list of Anthropic content blocks for the system parameter.
+
+    Block 0 — static role + property context (cache_control: ephemeral).
+    Block 1 — dynamic few-shot corrections (no cache_control).
+    """
+    corrections = await retrieve_similar_corrections(
+        session, thread_id, top_n=settings.TOP_N_FEW_SHOT
+    )
+    few_shot_text = format_few_shot_examples(corrections)
+    dynamic_text = few_shot_text if few_shot_text else "No past corrections available."
+
+    return [
+        {
+            "type": "text",
+            "text": _STATIC_SYSTEM_PROMPT,
+            "cache_control": {"type": "ephemeral"},
+        },
+        {
+            "type": "text",
+            "text": dynamic_text,
+        },
+    ]
+
+
+async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecision:
+    """Run the agentic loop for a thread and persist an AgentDecision."""
+    # Fetch thread with its messages
+    result = await session.execute(
+        select(Thread)
+        .options(
+            selectinload(Thread.messages)
+        )
+        .where(Thread.id == thread_id)
+    )
+    thread = result.scalar_one()
+
+    # Fetch messages for this thread (via junction table) ordered by received_at
+    msg_result = await session.execute(
+        select(Message)
+        .join(ThreadMessage, ThreadMessage.message_id == Message.id)
+        .where(ThreadMessage.thread_id == thread_id)
+        .order_by(Message.received_at)
+    )
+    messages = list(msg_result.scalars().all())
+
+    # Retrieve few-shot corrections before creating the decision (need their IDs)
+    corrections = await retrieve_similar_corrections(
+        session, thread_id, top_n=settings.TOP_N_FEW_SHOT
+    )
+    few_shot_ids = [c.id for c in corrections]
+    few_shot_text = format_few_shot_examples(corrections)
+    dynamic_text = few_shot_text if few_shot_text else "No past corrections available."
+
+    system_blocks = [
+        {
+            "type": "text",
+            "text": _STATIC_SYSTEM_PROMPT,
+            "cache_control": {"type": "ephemeral"},
+        },
+        {
+            "type": "text",
+            "text": dynamic_text,
+        },
+    ]
+
+    # Mark any previous decisions as not current
+    await session.execute(
+        update(AgentDecision)
+        .where(AgentDecision.thread_id == thread_id, AgentDecision.is_current == True)  # noqa: E712
+        .values(is_current=False)
+    )
+
+    # Create the in-progress decision row (tools may mutate it during the loop)
+    decision = AgentDecision(
+        thread_id=thread_id,
+        action=Action.no_action,
+        rationale="",
+        model_id="claude-sonnet-4-6",
+        few_shot_ids=few_shot_ids,
+        is_current=True,
+    )
+    session.add(decision)
+    await session.flush()
+
+    # Build the initial user message
+    thread_header = f"Thread ID: {thread_id}\nMessages ({len(messages)} total):\n"
+    message_parts = []
+    for msg in messages:
+        content = msg.transcription or msg.raw_content
+        message_parts.append(
+            f"[{msg.channel.value} from {msg.sender_ref}]: {content}"
+        )
+    user_content = thread_header + "\n".join(message_parts)
+
+    # Agentic loop
+    conversation: list[dict] = [{"role": "user", "content": user_content}]
+    tools_called: list[str] = []
+
+    while True:
+        response = await anthropic_client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=2048,
+            system=system_blocks,
+            tools=TOOLS,
+            messages=conversation,
+        )
+
+        if response.stop_reason == "end_turn":
+            # Extract rationale from the final text block if present
+            rationale = ""
+            for block in response.content:
+                if hasattr(block, "type") and block.type == "text":
+                    rationale = block.text
+                    break
+            decision.rationale = rationale
+            break
+
+        # Process tool_use blocks
+        tool_results = []
+        for block in response.content:
+            if not (hasattr(block, "type") and block.type == "tool_use"):
+                continue
+
+            tool_name = block.name
+            tool_input = block.input
+            tools_called.append(tool_name)
+
+            try:
+                handler = _TOOL_DISPATCH[tool_name]
+                tool_result = await handler(session, thread_id, **tool_input)
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": str(tool_result),
+                })
+            except Exception as exc:
+                logger.error("Tool %s failed: %s", tool_name, exc)
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "is_error": True,
+                    "content": str(exc),
+                })
+
+        # Append assistant turn + tool results to conversation
+        conversation.append({"role": "assistant", "content": response.content})
+        conversation.append({"role": "user", "content": tool_results})
+
+    # Determine final action from which tools fired
+    decision.action = _determine_final_action(tools_called)
+
+    # Update thread status
+    thread.status = Status.pending_review
+
+    await session.commit()
+    return decision
