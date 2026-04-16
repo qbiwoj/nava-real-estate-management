@@ -30,12 +30,6 @@ const STATUS_CLASS: Record<Status, string> = {
   escalated: 'bg-red-100 text-red-800',
 }
 
-const ACTION_CLASS: Record<Action, string> = {
-  draft_reply: 'bg-blue-100 text-blue-800',
-  escalate: 'bg-red-100 text-red-800',
-  group_only: 'bg-yellow-100 text-yellow-800',
-  no_action: 'bg-gray-100 text-gray-600',
-}
 
 const PRIORITY_LABEL: Record<string, string> = {
   urgent: 'Pilny', high: 'Wysoki', medium: 'Średni', low: 'Niski',
@@ -198,26 +192,10 @@ export default function ThreadPage() {
           </div>
         ) : (
           <div className="border rounded-lg overflow-hidden">
-            {/* Action */}
-            <div className="px-4 py-3 border-b bg-muted/50 flex items-center gap-2">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Działanie:</span>
-              <Badge className={ACTION_CLASS[decision.action]}>
-                {ACTION_LABEL[decision.action]}
-              </Badge>
-            </div>
-
-            {/* Rationale */}
             <div className="px-4 py-3 bg-muted/30">
-              <div className="prose prose-sm max-w-none text-foreground
-                prose-p:my-1 prose-ul:my-1 prose-li:my-0
-                prose-headings:text-foreground prose-headings:font-semibold
-                prose-code:bg-muted prose-code:px-1 prose-code:rounded prose-code:text-xs
-                prose-table:w-full prose-table:text-sm prose-table:border-collapse
-                prose-thead:border-b
-                prose-th:py-1.5 prose-th:px-2 prose-th:text-left prose-th:font-medium prose-th:text-muted-foreground
-                prose-td:py-1.5 prose-td:px-2 prose-td:border-b prose-td:border-border/50">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {decision.rationale.trim().replace(/\n{3,}/g, '\n\n')}
+              <div className="prose prose-sm max-w-none text-foreground">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ hr: () => null }}>
+                  {decision.rationale.trim()}
                 </ReactMarkdown>
               </div>
             </div>
