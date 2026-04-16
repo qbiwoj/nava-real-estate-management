@@ -2,12 +2,13 @@ import asyncio
 
 import pytest
 import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.config import Settings
-from app.database import Base
+from app.database import Base, get_session
 import app.models  # noqa: F401 — registers all models with Base.metadata
 
 
@@ -37,3 +38,18 @@ def db_session(db_engine):
 @pytest.fixture
 def session(db_session):
     return db_session
+
+
+@pytest_asyncio.fixture
+async def async_client(db_session):
+    """AsyncClient with get_session overridden to use the test DB."""
+    from app.main import app
+
+    async def override_get_session():
+        async with db_session() as s:
+            yield s
+
+    app.dependency_overrides[get_session] = override_get_session
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        yield client
+    app.dependency_overrides.clear()
