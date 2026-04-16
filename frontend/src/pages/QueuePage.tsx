@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
+import { Tooltip } from '@/components/ui/tooltip'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { sendDemoMessage, getBriefingText, getBriefingAudio, getAdminStats } from '@/lib/api'
@@ -184,22 +185,6 @@ export default function QueuePage() {
         </div>
       </div>
 
-      {/* Stats bar */}
-      {stats && (
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mb-4 text-xs text-muted-foreground border rounded-lg px-4 py-2.5 bg-muted/20">
-          <span>
-            <span className="font-medium text-foreground">{stats.costs.agent_runs}</span> uruchomień agenta
-          </span>
-          <span>
-            Łączny koszt:{' '}
-            <span className="font-medium text-foreground">${stats.costs.agent_total_usd.toFixed(4)}</span>
-          </span>
-          <span>
-            Śr. na uruchomienie:{' '}
-            <span className="font-medium text-foreground">${stats.costs.avg_cost_per_run_usd.toFixed(4)}</span>
-          </span>
-        </div>
-      )}
 
       {/* Briefing result */}
       {briefingError && (
@@ -291,7 +276,7 @@ export default function QueuePage() {
       )}
 
       {/* Filtry */}
-      <div className="flex gap-3 mb-4">
+      <div className="flex gap-3 mb-4 items-center">
         <Select value={status} onValueChange={(v) => setStatus(v as Status | '')}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Wszystkie statusy" />
@@ -334,6 +319,11 @@ export default function QueuePage() {
             <SelectItem value="Inne">Inne</SelectItem>
           </SelectContent>
         </Select>
+        {stats && (
+          <Tooltip
+            content={`Uruchomień: ${stats.costs.agent_runs} · Łączny koszt: $${stats.costs.agent_total_usd.toFixed(4)} · Śr.: $${stats.costs.avg_cost_per_run_usd.toFixed(4)}/uruchomienie`}
+          />
+        )}
       </div>
 
       {/* Tabela */}
