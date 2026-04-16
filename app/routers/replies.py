@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime, timezone
 
@@ -13,6 +14,7 @@ from app.models.enums import Status
 from app.schemas.replies import ReplyResponse, SendReplyRequest
 
 router = APIRouter(tags=["replies"])
+logger = logging.getLogger(__name__)
 
 
 @router.post(
@@ -40,6 +42,12 @@ async def send_reply(
     thread.status = Status.replied
     await session.commit()
     await session.refresh(reply)
+    logger.info("reply_sent", extra={
+        "event": "reply_sent",
+        "thread_id": str(thread_id),
+        "reply_id": str(reply.id),
+        "channel": body.channel.value if hasattr(body.channel, "value") else str(body.channel),
+    })
     return reply
 
 

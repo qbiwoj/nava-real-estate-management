@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -13,6 +14,7 @@ from app.schemas.feedback import FeedbackRequest, FeedbackResponse
 from app.services.feedback import retrieve_similar_corrections, submit_feedback
 
 router = APIRouter(tags=["feedback"])
+logger = logging.getLogger(__name__)
 
 
 @router.post(
@@ -53,6 +55,13 @@ async def create_feedback(
     )
     await session.commit()
     await session.refresh(feedback)
+    logger.info("feedback_submitted", extra={
+        "event": "feedback_submitted",
+        "thread_id": str(thread_id),
+        "decision_id": str(decision.id),
+        "feedback_type": body.feedback_type.value,
+        "has_corrected_action": body.corrected_action is not None,
+    })
     return feedback
 
 

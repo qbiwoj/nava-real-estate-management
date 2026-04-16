@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime, timezone
 
@@ -8,6 +9,8 @@ from app.config import settings
 from app.models import Message, Thread, ThreadMessage
 from app.models.enums import Channel, Priority, SenderType, Status
 from app.services import embeddings as _embeddings
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Sender type detection
@@ -79,11 +82,25 @@ async def find_or_create_thread(
 
     if row is not None and row.distance < effective_threshold:
         thread = await session.get(Thread, row.thread_id)
+        logger.info("thread_matched", extra={
+            "event": "thread_matched",
+            "sender_ref": sender_ref,
+            "thread_id": str(thread.id),
+            "distance": round(float(row.distance), 4),
+            "threshold": effective_threshold,
+        })
         return thread
 
     thread = Thread(priority=Priority.low, status=Status.new)
     session.add(thread)
     await session.flush()
+    logger.info("thread_created", extra={
+        "event": "thread_created",
+        "sender_ref": sender_ref,
+        "thread_id": str(thread.id),
+        "distance": round(float(row.distance), 4) if row else None,
+        "threshold": effective_threshold,
+    })
     return thread
 
 
@@ -132,5 +149,12 @@ async def ingest_message(
     thread = await find_or_create_thread(session, sender_ref, embedding)
 
     session.add(ThreadMessage(thread_id=thread.id, message_id=message.id))
+
+    logger.info("message_ingested", extra={
+        "event": "message_ingested",
+        "channel": channel,
+        "sender_ref": sender_ref,
+        "sender_type": sender_type.value,
+    })
 
     return message, thread

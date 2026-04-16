@@ -1,5 +1,9 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
+from app.logging_config import configure_logging
 from app.routers.admin import router as admin_router
 from app.routers.decisions import router as decisions_router
 from app.routers.feedback import router as feedback_router
@@ -8,7 +12,18 @@ from app.routers.threads import router as threads_router
 from app.routers.voice import router as voice_router
 from app.routers.webhooks import router as webhooks_router
 
-app = FastAPI(title="Nava Real Estate Management")
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    configure_logging()
+    logger.info("application_startup", extra={"event": "startup"})
+    yield
+    logger.info("application_shutdown", extra={"event": "shutdown"})
+
+
+app = FastAPI(title="Nava Real Estate Management", lifespan=lifespan)
 
 app.include_router(webhooks_router)
 app.include_router(threads_router)

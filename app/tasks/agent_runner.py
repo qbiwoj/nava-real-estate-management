@@ -15,8 +15,21 @@ async def run_agent_background(thread_id: uuid.UUID) -> None:
     Creates its own DB session, calls run_agent(), and swallows any exceptions
     so that the originating webhook 202 response is never affected by agent errors.
     """
+    logger.info("agent_task_started", extra={
+        "event": "agent_task_started",
+        "thread_id": str(thread_id),
+    })
     try:
         async with AsyncSessionLocal() as session:
-            await run_agent(thread_id, session)
+            decision = await run_agent(thread_id, session)
+        logger.info("agent_task_completed", extra={
+            "event": "agent_task_completed",
+            "thread_id": str(thread_id),
+            "decision_id": str(decision.id),
+            "action": decision.action.value,
+        })
     except Exception:
-        logger.exception("Background agent run failed for thread %s", thread_id)
+        logger.exception("agent_task_failed", extra={
+            "event": "agent_task_failed",
+            "thread_id": str(thread_id),
+        })
