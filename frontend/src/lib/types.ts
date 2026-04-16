@@ -90,3 +90,7 @@ export interface SendReplyPayload {
   channel: 'email' | 'sms'
   final_body: string
 }
+
+export type DemoMessagePayload =
+  | { channel: 'email'; from: string; subject: string; body: string }
+  | { channel: 'sms'; from: string; body: string }

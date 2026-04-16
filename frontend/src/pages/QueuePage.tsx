@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import { pl } from 'date-fns/locale'
 import { useThreads } from '@/hooks/useThreads'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Textarea } from '@/components/ui/textarea'
+import { sendDemoMessage } from '@/lib/api'
 import type { Status, Priority, Category, Thread } from '@/lib/types'
 
 const PRIORITY_CLASS: Record<Priority, string> = {
@@ -63,9 +67,50 @@ function sender(thread: Thread): string {
 
 export default function QueuePage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [status, setStatus] = useState<Status | ''>('')
   const [priority, setPriority] = useState<Priority | ''>('')
   const [category, setCategory] = useState<Category | ''>('')
+
+  // Demo message form state
+  const [showForm, setShowForm] = useState(false)
+  const [channel, setChannel] = useState<'email' | 'sms'>('email')
+  const [from, setFrom] = useState('')
+  const [subject, setSubject] = useState('')
+  const [body, setBody] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+
+  function resetForm() {
+    setChannel('email')
+    setFrom('')
+    setSubject('')
+    setBody('')
+    setFormError(null)
+  }
+
+  async function handleSubmit() {
+    if (!from.trim() || !body.trim()) {
+      setFormError('Pola "Od" i "Treść" są wymagane.')
+      return
+    }
+    setSubmitting(true)
+    setFormError(null)
+    try {
+      const payload =
+        channel === 'email'
+          ? { channel: 'email' as const, from: from.trim(), subject: subject.trim(), body: body.trim() }
+          : { channel: 'sms' as const, from: from.trim(), body: body.trim() }
+      await sendDemoMessage(payload)
+      await queryClient.invalidateQueries({ queryKey: ['threads'] })
+      setShowForm(false)
+      resetForm()
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : 'Nieznany błąd.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   const { data, isLoading, isError } = useThreads({
     status: status || undefined,
@@ -75,7 +120,84 @@ export default function QueuePage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-xl font-semibold mb-4">Kolejka wiadomości</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-semibold">Kolejka wiadomości</h1>
+        <Button variant="outline" size="sm" onClick={() => { resetForm(); setShowForm(true) }}>
+          + Dodaj wiadomość
+        </Button>
+      </div>
+
+      {/* Demo message modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-background rounded-lg border shadow-lg w-full max-w-md p-6 space-y-4">
+            <h2 className="text-base font-semibold">Wyślij testową wiadomość</h2>
+
+            {/* Channel toggle */}
+            <div className="flex gap-2">
+              <button
+                className={`px-3 py-1 rounded text-sm border ${channel === 'email' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}
+                onClick={() => setChannel('email')}
+              >
+                Email
+              </button>
+              <button
+                className={`px-3 py-1 rounded text-sm border ${channel === 'sms' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}
+                onClick={() => setChannel('sms')}
+              >
+                SMS
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">
+                  Od {channel === 'email' ? '(adres e-mail)' : '(numer telefonu)'}
+                </label>
+                <input
+                  className="w-full border rounded px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                  placeholder={channel === 'email' ? 'mieszkaniec@example.com' : '+48600000000'}
+                />
+              </div>
+
+              {channel === 'email' && (
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Temat</label>
+                  <input
+                    className="w-full border rounded px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="np. Usterka w mieszkaniu"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Treść</label>
+                <Textarea
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  placeholder="Treść wiadomości…"
+                  rows={4}
+                />
+              </div>
+            </div>
+
+            {formError && <p className="text-xs text-red-600">{formError}</p>}
+
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" size="sm" onClick={() => { setShowForm(false); resetForm() }} disabled={submitting}>
+                Anuluj
+              </Button>
+              <Button size="sm" onClick={handleSubmit} disabled={submitting}>
+                {submitting ? 'Wysyłanie…' : 'Wyślij'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filtry */}
       <div className="flex gap-3 mb-4">

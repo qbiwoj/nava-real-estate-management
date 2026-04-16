@@ -4,6 +4,7 @@ import type {
   ThreadFilters,
   FeedbackPayload,
   SendReplyPayload,
+  DemoMessagePayload,
 } from './types'
 
 const BASE = '/api/v1'
@@ -49,4 +50,9 @@ export function submitFeedback(id: string, payload: FeedbackPayload): Promise<vo
 
 export function sendReply(id: string, payload: SendReplyPayload): Promise<void> {
   return apiFetch(`/threads/${id}/send-reply`, { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export function sendDemoMessage(payload: DemoMessagePayload): Promise<{ message_id: string; thread_id: string }> {
+  const { channel, ...rest } = payload
+  return apiFetch(`/webhooks/${channel}`, { method: 'POST', body: JSON.stringify(rest) })
 }
