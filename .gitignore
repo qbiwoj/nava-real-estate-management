@@ -15,3 +15,6 @@ wheels/
 
 # Claude Code local settings (contain secrets)
 .claude/settings.local.json
+
+MASTER_SPEC.md
+CLAUDE.md

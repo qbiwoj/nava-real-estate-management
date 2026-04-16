@@ -194,7 +194,7 @@ Update this section at the start/end of each build session.
 | Session | Scope | Status |
 |---|---|---|
 | 1 | DB, models, migrations | done |
-| 2 | Ingestion, webhooks, thread grouping | not started |
+| 2 | Ingestion, webhooks, thread grouping | done |
 | 3 | Agent core, tools, prompt assembly | not started |
 | 4 | Feedback loop, reply sending | not started |
 | 5 | Voice briefing + frontend UI | not started |
