@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -45,7 +45,16 @@ async def list_threads(
     offset = (page - 1) * page_size
     paginated = (
         query.options(selectinload(Thread.messages))
-        .order_by(Thread.created_at.desc())
+        .order_by(
+            case(
+                (Thread.priority == "urgent", 0),
+                (Thread.priority == "high", 1),
+                (Thread.priority == "medium", 2),
+                (Thread.priority == "low", 3),
+                else_=4,
+            ),
+            Thread.created_at.desc(),
+        )
         .offset(offset)
         .limit(page_size)
     )
