@@ -69,6 +69,7 @@ export default function QueuePage() {
   const [status, setStatus] = useState<Status | ''>('')
   const [priority, setPriority] = useState<Priority | ''>('')
   const [category, setCategory] = useState<Category | ''>('')
+  const [sortBy, setSortBy] = useState<'Najnowsze' | 'Najstarsze'>('Najnowsze')
 
   const [briefingLoading, setBriefingLoading] = useState(false)
   const [briefingText, setBriefingText] = useState<string | null>(null)
@@ -148,6 +149,21 @@ export default function QueuePage() {
     queryFn: getAdminStats,
     refetchInterval: 30_000,
   })
+
+  const sortedThreads = data?.items
+    ? [...data.items].sort((a, b) => {
+        // First sort by update time
+        const timeCompare = sortBy === 'Najnowsze' 
+          ? new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+          : new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime()
+        
+        if (timeCompare !== 0) return timeCompare
+        
+        // Then by status (using predefined order)
+        const statusOrder = ['new', 'pending_review', 'escalated', 'replied', 'resolved']
+        return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status)
+      })
+    : []
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -254,7 +270,17 @@ export default function QueuePage() {
       )}
 
       {/* Filtry */}
-      <div className="flex gap-3 mb-4 items-center">
+      <div className="flex gap-3 mb-4 items-center flex-wrap">
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'Najnowsze' | 'Najstarsze')}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Sortuj" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Najnowsze">Najnowsze</SelectItem>
+            <SelectItem value="Najstarsze">Najstarsze</SelectItem>
+          </SelectContent>
+        </Select>
+
         <Select value={status} onValueChange={(v) => setStatus(v as Status | '')}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Wszystkie statusy" />
@@ -333,7 +359,7 @@ export default function QueuePage() {
               </tr>
             ))}
 
-          {!isLoading && data?.items.length === 0 && (
+          {!isLoading && sortedThreads.length === 0 && (
             <tr>
               <td colSpan={6} className="py-8 text-center text-muted-foreground">
                 Brak wątków.
@@ -341,7 +367,7 @@ export default function QueuePage() {
             </tr>
           )}
 
-          {data?.items.map((thread) => (
+          {sortedThreads.map((thread) => (
             <tr
               key={thread.id}
               className="border-b hover:bg-muted/40 cursor-pointer"

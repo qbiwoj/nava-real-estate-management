@@ -9,8 +9,7 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
     ELEVENLABS_API_KEY: str = ""
-    THREAD_SIMILARITY_THRESHOLD: float = 0.25
-    TOP_N_FEW_SHOT: int = 5
+MODEL_ID: str = "claude-sonnet-4-6"
 
 
 settings = Settings()

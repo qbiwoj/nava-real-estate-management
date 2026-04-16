@@ -53,8 +53,6 @@ _TOOL_DISPATCH = {
     "mark_no_action": mark_no_action,
 }
 
-_MODEL="claude-sonnet-4.6"
-
 def _determine_final_action(tools_called: list[str]) -> Action:
     """Infer the agent's final action from which tools fired during the loop."""
     if "escalate" in tools_called:
@@ -76,7 +74,7 @@ async def assemble_system_prompt(
     Block 1 — dynamic few-shot corrections (no cache_control).
     """
     corrections = await retrieve_similar_corrections(
-        session, thread_id, top_n=settings.TOP_N_FEW_SHOT
+        session, thread_id, top_n=5
     )
     few_shot_text = format_few_shot_examples(corrections)
     dynamic_text = few_shot_text if few_shot_text else "No past corrections available."
@@ -117,7 +115,7 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
 
     # Retrieve few-shot corrections before creating the decision (need their IDs)
     corrections = await retrieve_similar_corrections(
-        session, thread_id, top_n=settings.TOP_N_FEW_SHOT
+        session, thread_id, top_n=5
     )
     few_shot_ids = [c.id for c in corrections]
     few_shot_text = format_few_shot_examples(corrections)
@@ -147,7 +145,7 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
         thread_id=thread_id,
         action=Action.no_action,
         rationale="",
-        model_id=_MODEL,
+        model_id=settings.MODEL_ID,
         few_shot_ids=few_shot_ids,
         is_current=True,
     )
@@ -179,7 +177,7 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
 
     while True:
         response = await anthropic_client.messages.create(
-            model=_MODEL,
+            model=settings.MODEL_ID,
             max_tokens=2048,
             system=system_blocks,
             tools=TOOLS,

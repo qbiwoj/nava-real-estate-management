@@ -14,7 +14,7 @@ export function useThread(id: string) {
   return useQuery({
     queryKey: ['thread', id],
     queryFn: () => getThread(id),
-    refetchInterval: 30_000,
+    refetchInterval: 2_000,
     enabled: !!id,
   })
 }

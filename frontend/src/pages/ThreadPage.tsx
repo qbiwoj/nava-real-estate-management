@@ -192,6 +192,10 @@ export default function ThreadPage() {
           <div className="border rounded-lg overflow-hidden">
             <Spinner text="Agent analizuje wiadomości…" />
           </div>
+        ) : !decision && thread.status === 'new' ? (
+          <div className="border rounded-lg overflow-hidden">
+            <Spinner text="Agent analizuje wiadomości…" />
+          </div>
         ) : !decision ? (
           <div className="border rounded-lg p-4 text-center text-sm text-muted-foreground">
             Agent jeszcze nie działał.
@@ -208,7 +212,9 @@ export default function ThreadPage() {
                 prose-thead:border-b
                 prose-th:py-1.5 prose-th:px-2 prose-th:text-left prose-th:font-medium prose-th:text-muted-foreground
                 prose-td:py-1.5 prose-td:px-2 prose-td:border-b prose-td:border-border/50">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{decision.rationale}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {decision.rationale.trim().replace(/\n{3,}/g, '\n\n')}
+                </ReactMarkdown>
               </div>
             </div>
 
@@ -283,7 +289,9 @@ export default function ThreadPage() {
                     onValueChange={(v) => setCorrectedAction(v as Action)}
                   >
                     <SelectTrigger className="w-52">
-                      <SelectValue />
+                      <SelectValue>
+                        {correctedAction ? ACTION_LABEL[correctedAction] : 'Wybierz działanie...'}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="draft_reply">Projekt odpowiedzi</SelectItem>

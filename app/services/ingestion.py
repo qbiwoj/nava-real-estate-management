@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.models import Message, Thread, ThreadMessage
 from app.models.enums import Channel, Priority, SenderType, Status
 from app.services import embeddings as _embeddings
@@ -61,7 +60,7 @@ async def find_or_create_thread(
     Does NOT commit — caller is responsible.
     """
     effective_threshold = (
-        threshold if threshold is not None else settings.THREAD_SIMILARITY_THRESHOLD
+        threshold if threshold is not None else 0.25
     )
 
     sql = text("""
