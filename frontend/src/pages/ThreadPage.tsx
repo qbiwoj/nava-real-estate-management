@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tooltip } from '@/components/ui/tooltip'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Action, Priority, Status, Message } from '@/lib/types'
@@ -167,7 +168,14 @@ export default function ThreadPage() {
 
       {/* Agent Decision */}
       <section className="space-y-3">
-        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Decyzja agenta</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Decyzja agenta</h2>
+          {decision && (
+            <Tooltip
+              content={`Model: ${decision.model_id} · Koszt: $${decision.cost_usd?.toFixed(4)}`}
+            />
+          )}
+        </div>
 
         {!decision ? (
           <div className="border rounded-lg p-4 flex items-center justify-between">
@@ -186,21 +194,15 @@ export default function ThreadPage() {
             {/* Header */}
             <div className="px-4 py-3 flex items-center gap-2 border-b bg-background">
               <Badge className={ACTION_CLASS[decision.action]}>{ACTION_LABEL[decision.action]}</Badge>
-              <span className="text-xs text-muted-foreground font-mono">{decision.model_id}</span>
               {(decision.few_shot_ids?.length ?? 0) > 0 && (
                 <span className="text-xs text-muted-foreground">
                   · {decision.few_shot_ids?.length} korekty
                 </span>
               )}
-              {decision.cost_usd != null && (
-                <span className="ml-auto text-xs font-mono text-muted-foreground" title={`${decision.input_tokens} in / ${decision.output_tokens} out tokens`}>
-                  ${decision.cost_usd.toFixed(4)}
-                </span>
-              )}
             </div>
 
             {/* Rationale */}
-            <div className="px-4 py-3 bg-muted/30 max-h-72 overflow-y-auto">
+            <div className="px-4 py-3 bg-muted/30">
               <div className="prose prose-sm max-w-none text-foreground
                 prose-p:my-1 prose-ul:my-1 prose-li:my-0
                 prose-headings:text-foreground prose-headings:font-semibold
