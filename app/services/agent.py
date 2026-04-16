@@ -156,6 +156,7 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
     # Agentic loop
     conversation: list[dict] = [{"role": "user", "content": user_content}]
     tools_called: list[str] = []
+    total_input = total_output = total_cache_read = total_cache_create = 0
 
     while True:
         response = await anthropic_client.messages.create(
@@ -165,6 +166,11 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
             tools=TOOLS,
             messages=conversation,
         )
+
+        total_input += response.usage.input_tokens
+        total_output += response.usage.output_tokens
+        total_cache_read += getattr(response.usage, "cache_read_input_tokens", 0) or 0
+        total_cache_create += getattr(response.usage, "cache_creation_input_tokens", 0) or 0
 
         if response.stop_reason == "end_turn":
             # Extract rationale from the final text block if present
@@ -207,6 +213,12 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
         # Append assistant turn + tool results to conversation
         conversation.append({"role": "assistant", "content": response.content})
         conversation.append({"role": "user", "content": tool_results})
+
+    # Persist token usage
+    decision.input_tokens = total_input
+    decision.output_tokens = total_output
+    decision.cache_read_tokens = total_cache_read
+    decision.cache_creation_tokens = total_cache_create
 
     # Determine final action from which tools fired
     decision.action = _determine_final_action(tools_called)

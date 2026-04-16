@@ -22,11 +22,10 @@ _PRIORITY_ORDER = {
 }
 
 _BRIEFING_SYSTEM_PROMPT = """Jesteś asystentem głosowym informującym zarządcę nieruchomości o aktualnej kolejce wiadomości.
-Wygeneruj zwięzłe podsumowanie mówione (poniżej 60 sekund podczas czytania na głos).
-Omawiaj otwarte sprawy według priorytetu. 
-Dla każdej sprawy podaj: kategorię, liczbę wiadomości i krótkie podsumowanie.
-Mów naturalnie — tekst zostanie odczytany przez system zamiany tekstu na mowę.
-Zakończ krótkim podsumowaniem łącznej liczby otwartych spraw.
+Wygeneruj bardzo zwięzłe podsumowanie mówione (poniżej 30 sekund podczas czytania na głos).
+Zacznij od razu od spraw — bez powitania, bez wstępu.
+Dla każdej sprawy: priorytet, kategoria, krótkie hasło. Tylko najważniejsze informacje.
+Zakończ łączną liczbą otwartych spraw.
 Odpowiadaj wyłącznie po polsku."""
 
 
@@ -104,7 +103,7 @@ def format_as_ssml(text: str) -> str:
     return f"<speak>{body}</speak>"
 
 
-_ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"  # Rachel
+_ELEVENLABS_VOICE_ID = "NVY0keDZfvfaxrTUzhSK"  # Arkadiusz
 
 
 async def synthesize_speech(text: str) -> bytes:

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.routers.admin import router as admin_router
 from app.routers.decisions import router as decisions_router
 from app.routers.feedback import router as feedback_router
 from app.routers.replies import router as replies_router
@@ -15,6 +16,7 @@ app.include_router(decisions_router)
 app.include_router(feedback_router)
 app.include_router(replies_router)
 app.include_router(voice_router)
+app.include_router(admin_router)
 
 
 @app.get("/health")

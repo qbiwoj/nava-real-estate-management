@@ -37,6 +37,23 @@ export interface AgentDecision {
   few_shot_ids: string[] | undefined
   is_current: boolean
   created_at: string
+  input_tokens: number | null
+  output_tokens: number | null
+  cache_read_tokens: number | null
+  cache_creation_tokens: number | null
+  cost_usd: number | null
+}
+
+export interface AdminStats {
+  by_status: Record<string, number>
+  by_priority: Record<string, number>
+  by_category: Record<string, number>
+  costs: {
+    agent_total_usd: number
+    agent_runs: number
+    avg_cost_per_run_usd: number
+    by_model: Record<string, { runs: number; cost_usd: number }>
+  }
 }
 
 export interface AdminFeedback {

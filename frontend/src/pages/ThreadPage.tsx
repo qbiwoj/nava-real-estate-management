@@ -192,6 +192,11 @@ export default function ThreadPage() {
                   · {decision.few_shot_ids?.length} korekty
                 </span>
               )}
+              {decision.cost_usd != null && (
+                <span className="ml-auto text-xs font-mono text-muted-foreground" title={`${decision.input_tokens} in / ${decision.output_tokens} out tokens`}>
+                  ${decision.cost_usd.toFixed(4)}
+                </span>
+              )}
             </div>
 
             {/* Rationale */}

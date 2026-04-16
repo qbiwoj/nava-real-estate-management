@@ -105,10 +105,10 @@ app/
     tools.py           # 6 tool implementations + Anthropic schemas
     embeddings.py      # generate_embedding(), similarity search
     feedback.py        # submit_feedback(), retrieve_similar_corrections()
-    voice.py           # ⚠️ NOT YET BUILT — generate_queue_briefing(), SSML formatter
+    voice.py           # generate_queue_briefing(), SSML formatter, synthesize_speech()
   tasks/
     agent_runner.py    # BackgroundTask wrapper for run_agent()
-  seed.py              # ⚠️ NOT YET BUILT — loads data.csv → DB with correct thread groupings
+  seed.py              # loads data.csv → DB with correct thread groupings (--force to reseed)
 tests/                 # mirrors app/ — conftest.py has DB fixtures + factories
 frontend/              # Vite + React + TS + Tailwind + shadcn/ui
   src/
@@ -197,6 +197,7 @@ Update this section at the start/end of each build session.
 | 3 | Agent core, tools, prompt assembly | done |
 | 4 | Feedback loop, reply sending | done |
 | 5a | Frontend UI (QueuePage, ThreadPage, feedback/reply flow) | done |
-| 5b | Voice briefing (`voice.py`, `/voice/inbound`, `/voice/briefing-text`) | not started |
+| 5b | Voice briefing (`voice.py`, `/voice/inbound`, `/voice/briefing-text`) | done |
 | 5c | Bugfix: agent `group_messages` FK violation — add message IDs to prompt, rollback on tool error | done |
-| 6 | Seed data (`seed.py`), polish, demo hardening | in progress |
+| 6a | Seed data (`seed.py`) | done |
+| 6b | Structured logging, `/admin/stats`, RFC 7807 errors, rate limiting, README demo script | not started |

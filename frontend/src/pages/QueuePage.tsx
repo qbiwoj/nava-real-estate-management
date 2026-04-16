@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import { pl } from 'date-fns/locale'
 import { useThreads } from '@/hooks/useThreads'
@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { sendDemoMessage, getBriefingText, getBriefingAudio } from '@/lib/api'
+import { sendDemoMessage, getBriefingText, getBriefingAudio, getAdminStats } from '@/lib/api'
 import type { Status, Priority, Category, Thread } from '@/lib/types'
 
 const PRIORITY_CLASS: Record<Priority, string> = {
@@ -149,6 +149,12 @@ export default function QueuePage() {
     category: category || undefined,
   })
 
+  const { data: stats } = useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: getAdminStats,
+    refetchInterval: 30_000,
+  })
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-4">
@@ -177,6 +183,23 @@ export default function QueuePage() {
           </Button>
         </div>
       </div>
+
+      {/* Stats bar */}
+      {stats && (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mb-4 text-xs text-muted-foreground border rounded-lg px-4 py-2.5 bg-muted/20">
+          <span>
+            <span className="font-medium text-foreground">{stats.costs.agent_runs}</span> uruchomień agenta
+          </span>
+          <span>
+            Łączny koszt:{' '}
+            <span className="font-medium text-foreground">${stats.costs.agent_total_usd.toFixed(4)}</span>
+          </span>
+          <span>
+            Śr. na uruchomienie:{' '}
+            <span className="font-medium text-foreground">${stats.costs.avg_cost_per_run_usd.toFixed(4)}</span>
+          </span>
+        </div>
+      )}
 
       {/* Briefing result */}
       {briefingError && (

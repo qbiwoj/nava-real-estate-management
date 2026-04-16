@@ -5,6 +5,7 @@ import type {
   FeedbackPayload,
   SendReplyPayload,
   DemoMessagePayload,
+  AdminStats,
 } from './types'
 
 const BASE = '/api/v1'
@@ -77,6 +78,10 @@ export function sendReply(id: string, payload: SendReplyPayload): Promise<void> 
 export function sendDemoMessage(payload: DemoMessagePayload): Promise<{ message_id: string; thread_id: string }> {
   const { channel, ...rest } = payload
   return apiFetch(`/webhooks/${channel}`, { method: 'POST', body: JSON.stringify(rest) })
+}
+
+export function getAdminStats(): Promise<AdminStats> {
+  return apiFetch('/admin/stats')
 }
 
 export function getBriefingText(): Promise<{ text: string; threads_covered: string[] }> {
