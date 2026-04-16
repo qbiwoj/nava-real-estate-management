@@ -92,6 +92,31 @@ uv run pytest --tb=short -q
 
 ---
 
+## Dodanie nowego zgłoszenia (live demo)
+
+```bash
+# Email od mieszkańca
+curl -s -X POST http://localhost:8000/api/v1/webhooks/email \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sender": "nowy.mieszkaniec@gmail.com",
+    "subject": "Awaria ogrzewania",
+    "body": "Dzień dobry, od wczoraj nie działa ogrzewanie w mieszkaniu 5C. Proszę o pilną interwencję."
+  }' | jq .
+
+# SMS
+curl -s -X POST http://localhost:8000/api/v1/webhooks/sms \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from": "+48 600 123 456",
+    "body": "Hej, zamek w drzwiach wejściowych jest zepsuty od rana"
+  }' | jq .
+```
+
+Agent przetworzy zgłoszenie w tle — odśwież UI za kilka sekund.
+
+---
+
 ## Kluczowe decyzje projektowe
 
 - **pgvector do grupowania wątków** — zamiast reguł opartych na nadawcy czy temacie, wiadomości są grupowane przez podobieństwo embeddingów (cosine distance). Dzięki temu SMS od mieszkańca i jego późniejszy email o tym samym problemie trafiają do jednego wątku automatycznie.

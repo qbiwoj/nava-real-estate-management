@@ -1,5 +1,9 @@
 # Strategia na przyszłość
 
+## Kontekst biznesowy
+
+Nava przejmuje rozproszone firmy zarządzające nieruchomościami przez M&A i prowadzi je ze znacznie wyższymi marżami dzięki technologii. Kluczowy wskaźnik: jeden administrator obsługuje dziś ~200 mieszkań — z AI możliwe jest 2–3x więcej przy tym samym czasie pracy. To bezpośrednio przekłada się na marżę po przejęciu każdej kolejnej firmy. System nie jest tylko narzędziem produktywności — jest częścią tezy inwestycyjnej rollup.
+
 ## Kolejne kroki
 
 ### 1. Rozbudowane możliwości Voice AI
@@ -14,8 +18,5 @@ Panel admina to tylko jedna strona równania. Aplikacja dla mieszkańców umożl
 ### 4. Obsługa wielu nieruchomości (multi-tenant)
 Obecna architektura zakłada jedną nieruchomość. Dodanie warstwy tenant pozwoliłoby obsługiwać wiele budynków lub zarządców z jednej instancji — z izolacją danych, osobnymi konfiguracjami agenta i raportowaniem per-nieruchomość.
 
-### 5. ~~Analityka i raporty~~ ✓ Zrealizowane
-Dashboard z metrykami operacyjnymi został zaimplementowany.
-
-### 6. Integracje z zewnętrznymi kanałami
+### 5. Integracje z zewnętrznymi kanałami
 Obecne webhooki wymagają ręcznego wywołania. Podłączenie prawdziwych dostawców (SendGrid dla emaila, Twilio dla SMS) zamknęłoby pętlę — wiadomości wpływają automatycznie, odpowiedzi są wysyłane bez opuszczania systemu.
