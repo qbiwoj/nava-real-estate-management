@@ -105,17 +105,17 @@ app/
     tools.py           # 6 tool implementations + Anthropic schemas
     embeddings.py      # generate_embedding(), similarity search
     feedback.py        # submit_feedback(), retrieve_similar_corrections()
-    voice.py           # generate_queue_briefing(), SSML formatter
+    voice.py           # ⚠️ NOT YET BUILT — generate_queue_briefing(), SSML formatter
   tasks/
     agent_runner.py    # BackgroundTask wrapper for run_agent()
-  seed.py              # loads data.csv → DB with correct thread groupings
+  seed.py              # ⚠️ NOT YET BUILT — loads data.csv → DB with correct thread groupings
 tests/                 # mirrors app/ — conftest.py has DB fixtures + factories
 frontend/              # Vite + React + TS + Tailwind + shadcn/ui
   src/
     pages/             # QueuePage (/), ThreadPage (/threads/:id)
-    components/        # ThreadList, AgentDecisionPanel, DraftEditor, FeedbackControls
-    hooks/             # useThreads, useThread (TanStack Query, 30s poll)
-    lib/               # api.ts (typed fetch), types.ts
+    components/ui/     # badge, button, select, skeleton, textarea (shadcn)
+    hooks/             # useThreads, useThread, useRunAgent, useSubmitFeedback, useSendReply
+    lib/               # api.ts (typed fetch wrapper), types.ts
 ```
 
 ---
@@ -196,5 +196,7 @@ Update this section at the start/end of each build session.
 | 2 | Ingestion, webhooks, thread grouping | done |
 | 3 | Agent core, tools, prompt assembly | done |
 | 4 | Feedback loop, reply sending | done |
-| 5 | Voice briefing + frontend UI | not started |
-| 6 | Seed data, polish, demo hardening | not started |
+| 5a | Frontend UI (QueuePage, ThreadPage, feedback/reply flow) | done |
+| 5b | Voice briefing (`voice.py`, `/voice/inbound`, `/voice/briefing-text`) | not started |
+| 5c | Bugfix: agent `group_messages` FK violation — add message IDs to prompt, rollback on tool error | done |
+| 6 | Seed data (`seed.py`), polish, demo hardening | not started |

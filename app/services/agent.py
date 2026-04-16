@@ -149,7 +149,7 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
     for msg in messages:
         content = msg.transcription or msg.raw_content
         message_parts.append(
-            f"[{msg.channel.value} from {msg.sender_ref}]: {content}"
+            f"[Message ID: {msg.id}] [{msg.channel.value} from {msg.sender_ref}]: {content}"
         )
     user_content = thread_header + "\n".join(message_parts)
 
@@ -196,6 +196,7 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
                 })
             except Exception as exc:
                 logger.error("Tool %s failed: %s", tool_name, exc)
+                await session.rollback()
                 tool_results.append({
                     "type": "tool_result",
                     "tool_use_id": block.id,
