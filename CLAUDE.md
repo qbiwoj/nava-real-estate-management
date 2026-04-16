@@ -199,4 +199,4 @@ Update this section at the start/end of each build session.
 | 5a | Frontend UI (QueuePage, ThreadPage, feedback/reply flow) | done |
 | 5b | Voice briefing (`voice.py`, `/voice/inbound`, `/voice/briefing-text`) | not started |
 | 5c | Bugfix: agent `group_messages` FK violation — add message IDs to prompt, rollback on tool error | done |
-| 6 | Seed data (`seed.py`), polish, demo hardening | not started |
+| 6 | Seed data (`seed.py`), polish, demo hardening | in progress |
