@@ -136,7 +136,7 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
         thread_id=thread_id,
         action=Action.no_action,
         rationale="",
-        model_id="claude-sonnet-4-6",
+        model_id="claude-haiku-4-5-20251001",
         few_shot_ids=few_shot_ids,
         is_current=True,
     )
@@ -160,7 +160,7 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
 
     while True:
         response = await anthropic_client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-haiku-4-5-20251001",
             max_tokens=2048,
             system=system_blocks,
             tools=TOOLS,
