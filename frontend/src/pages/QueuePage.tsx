@@ -116,7 +116,7 @@ export default function QueuePage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold">Kolejka wiadomości</h1>
+        <h1 className="text-xl font-semibold">Panel administratora</h1>
         <Button variant="outline" size="sm" onClick={() => { resetForm(); setShowForm(true) }}>
           + Dodaj wiadomość
         </Button>
@@ -197,45 +197,45 @@ export default function QueuePage() {
       {/* Filtry */}
       <div className="flex gap-3 mb-4">
         <Select value={status} onValueChange={(v) => setStatus(v as Status | '')}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-48">
             <SelectValue placeholder="Wszystkie statusy" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">Wszystkie statusy</SelectItem>
-            <SelectItem value="new">Nowy</SelectItem>
-            <SelectItem value="pending_review">Do sprawdzenia</SelectItem>
-            <SelectItem value="replied">Odpowiedziano</SelectItem>
-            <SelectItem value="resolved">Zamknięty</SelectItem>
-            <SelectItem value="escalated">Eskalowany</SelectItem>
+            <SelectItem value="Nowy">Nowy</SelectItem>
+            <SelectItem value="Do sprawdzenia">Do sprawdzenia</SelectItem>
+            <SelectItem value="Odpowiedziano">Odpowiedziano</SelectItem>
+            <SelectItem value="Zamknięty">Zamknięty</SelectItem>
+            <SelectItem value="Eskalowany">Eskalowany</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={priority} onValueChange={(v) => setPriority(v as Priority | '')}>
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-48">
             <SelectValue placeholder="Wszystkie priorytety" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">Wszystkie priorytety</SelectItem>
-            <SelectItem value="urgent">Pilny</SelectItem>
-            <SelectItem value="high">Wysoki</SelectItem>
-            <SelectItem value="medium">Średni</SelectItem>
-            <SelectItem value="low">Niski</SelectItem>
+            <SelectItem value="Pilny">Pilny</SelectItem>
+            <SelectItem value="Wysoki">Wysoki</SelectItem>
+            <SelectItem value="Średni">Średni</SelectItem>
+            <SelectItem value="Niski">Niski</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={category} onValueChange={(v) => setCategory(v as Category | '')}>
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-48">
             <SelectValue placeholder="Wszystkie kategorie" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">Wszystkie kategorie</SelectItem>
-            <SelectItem value="maintenance">Usterka</SelectItem>
-            <SelectItem value="payment">Płatność</SelectItem>
-            <SelectItem value="noise_complaint">Hałas</SelectItem>
-            <SelectItem value="lease">Najem</SelectItem>
-            <SelectItem value="general">Ogólne</SelectItem>
-            <SelectItem value="supplier">Dostawca</SelectItem>
-            <SelectItem value="other">Inne</SelectItem>
+            <SelectItem value="Usterka">Usterka</SelectItem>
+            <SelectItem value="Płatność">Płatność</SelectItem>
+            <SelectItem value="Hałas">Hałas</SelectItem>
+            <SelectItem value="Najem">Najem</SelectItem>
+            <SelectItem value="Ogólne">Ogólne</SelectItem>
+            <SelectItem value="Dostawca">Dostawca</SelectItem>
+            <SelectItem value="Inne">Inne</SelectItem>
           </SelectContent>
         </Select>
       </div>
