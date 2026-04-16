@@ -178,7 +178,6 @@ How admin corrections improve future agent runs:
 
 ## Development Conventions
 
-- **TDD**: write a failing test first, then implement. Tests live in `tests/` mirroring `app/`.
 - **No real external calls in tests**: mock `anthropic.messages.create` and `generate_embedding()`.
 - **One behavior per commit**: conventional commits (`feat:`, `fix:`, `test:`, `refactor:`).
 - **Async everywhere**: all DB access uses `AsyncSession`; no sync SQLAlchemy calls.
@@ -196,6 +195,6 @@ Update this section at the start/end of each build session.
 | 1 | DB, models, migrations | done |
 | 2 | Ingestion, webhooks, thread grouping | done |
 | 3 | Agent core, tools, prompt assembly | done |
-| 4 | Feedback loop, reply sending | not started |
+| 4 | Feedback loop, reply sending | done |
 | 5 | Voice briefing + frontend UI | not started |
 | 6 | Seed data, polish, demo hardening | not started |
