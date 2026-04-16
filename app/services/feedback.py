@@ -6,7 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import AdminFeedback, Message, ThreadMessage
-from app.models.enums import FeedbackType
+from app.models.enums import Action, FeedbackType
+from app.services.embeddings import generate_embedding
 
 
 async def retrieve_similar_corrections(
@@ -45,6 +46,45 @@ async def retrieve_similar_corrections(
         .limit(top_n)
     )
     return list(result.scalars().all())
+
+
+async def submit_feedback(
+    session: AsyncSession,
+    thread_id: uuid.UUID,
+    decision_id: uuid.UUID,
+    feedback_type: FeedbackType,
+    original_action: Action,
+    corrected_action: Action | None = None,
+    corrected_draft: str | None = None,
+    correction_note: str | None = None,
+    original_draft: str | None = None,
+) -> AdminFeedback:
+    """Persist an AdminFeedback record and store the thread-context embedding."""
+    # Assemble context text from all messages in the thread
+    rows = await session.execute(
+        select(Message.raw_content)
+        .join(ThreadMessage, ThreadMessage.message_id == Message.id)
+        .where(ThreadMessage.thread_id == thread_id)
+        .order_by(Message.received_at)
+    )
+    message_texts = rows.scalars().all()
+    context_text = "\n".join(message_texts) if message_texts else ""
+
+    embedding = await generate_embedding(context_text) if context_text else None
+
+    feedback = AdminFeedback(
+        decision_id=decision_id,
+        feedback_type=feedback_type,
+        original_action=original_action,
+        original_draft=original_draft,
+        corrected_action=corrected_action,
+        corrected_draft=corrected_draft,
+        correction_note=correction_note,
+        embedding=embedding,
+    )
+    session.add(feedback)
+    await session.flush()
+    return feedback
 
 
 def format_few_shot_examples(corrections: list[AdminFeedback]) -> str:
