@@ -198,16 +198,6 @@ export default function ThreadPage() {
           </div>
         ) : (
           <div className="border rounded-lg overflow-hidden">
-            {/* Header */}
-            <div className="px-4 py-3 flex items-center gap-2 border-b bg-background">
-              <Badge className={ACTION_CLASS[decision.action]}>{ACTION_LABEL[decision.action]}</Badge>
-              {(decision.few_shot_ids?.length ?? 0) > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  · {decision.few_shot_ids?.length} korekty
-                </span>
-              )}
-            </div>
-
             {/* Rationale */}
             <div className="px-4 py-3 bg-muted/30">
               <div className="prose prose-sm max-w-none text-foreground
@@ -227,7 +217,7 @@ export default function ThreadPage() {
       </section>
 
       {/* Draft reply */}
-      {decision?.action === 'draft_reply' && (
+      {decision?.draft_reply && (
         <section className="space-y-3">
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Projekt odpowiedzi</h2>
           <div className="border rounded-lg overflow-hidden">

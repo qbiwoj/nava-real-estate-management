@@ -8,6 +8,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import AgentDecision, Message, Thread, ThreadMessage
 from app.models.enums import Category, Priority, Status
 
+# Polish translations for enum values used in agent responses
+POLISH_CATEGORY = {
+    "maintenance": "konserwacja",
+    "payment": "płatność",
+    "noise_complaint": "skarga na hałas",
+    "lease": "najem",
+    "general": "ogólne",
+    "supplier": "dostawca",
+    "other": "inne",
+}
+
+POLISH_PRIORITY = {
+    "low": "niski",
+    "medium": "średni",
+    "high": "wysoki",
+    "urgent": "pilny",
+}
+
 TOOLS: list[dict] = [
     {
         "name": "classify_and_set_category",
@@ -133,7 +151,11 @@ async def classify_and_set_category(
     thread.category = Category(category)
     thread.priority = Priority(priority)
     await session.flush()
-    return {"ok": True, "category": category, "priority": priority}
+    return {
+        "ok": True,
+        "category": POLISH_CATEGORY.get(category, category),
+        "priority": POLISH_PRIORITY.get(priority, priority),
+    }
 
 
 async def group_messages(
@@ -183,7 +205,7 @@ async def escalate(
     thread.status = Status.escalated
     thread.priority = Priority.urgent
     await session.flush()
-    return {"ok": True, "status": "escalated", "priority": "urgent"}
+    return {"ok": True, "status": "eskalowany", "priority": POLISH_PRIORITY["urgent"]}
 
 
 async def search_similar_threads(

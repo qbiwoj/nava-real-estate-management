@@ -29,9 +29,19 @@ anthropic_client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
 _STATIC_SYSTEM_PROMPT = """You are an AI property management assistant for a residential building in Warsaw, Poland.
 You receive messages from residents (email/SMS/voicemail), suppliers, and the building board.
 Your job is to classify incoming messages, group related threads, draft replies, or escalate urgent issues.
-Always respond in the same language as the resident's message.
+Your reasoning and decision rationale must always be in Polish.
+When drafting replies, respond in the same language as the resident's message.
+When drafting email or SMS replies, always sign them with "Administracja" on a new line at the end.
 Property context: 40-60 messages/day, mix of Polish and English residents.
 Available actions: classify_and_set_category, group_messages, draft_reply, escalate, search_similar_threads, mark_no_action.
+
+Category names in Polish: konserwacja, płatność, skarga na hałas, najem, ogólne, dostawca, inne.
+Priority names in Polish: niski, średni, wysoki, pilny.
+Always use Polish names when explaining actions in your reasoning.
+Do not use emoticons or emoji in your responses.
+
+When you finish, provide a concise summary in Polish of ONLY the actions you actually took (tools you called).
+Do not mention any actions you did not perform.
 Use the tools to take action, then stop when you have completed all necessary actions."""
 
 _TOOL_DISPATCH = {
@@ -143,6 +153,13 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
     session.add(decision)
     await session.flush()
 
+    logger.info("agent_run_started", extra={
+        "event": "agent_run_started",
+        "thread_id": str(thread_id),
+        "message_count": len(messages),
+        "few_shot_count": len(few_shot_ids),
+    })
+
     # Build the initial user message
     thread_header = f"Thread ID: {thread_id}\nMessages ({len(messages)} total):\n"
     message_parts = []
@@ -157,6 +174,7 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
     conversation: list[dict] = [{"role": "user", "content": user_content}]
     tools_called: list[str] = []
     total_input = total_output = total_cache_read = total_cache_create = 0
+    turn_number = 0
 
     while True:
         response = await anthropic_client.messages.create(
@@ -167,10 +185,22 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
             messages=conversation,
         )
 
+        turn_number += 1
         total_input += response.usage.input_tokens
         total_output += response.usage.output_tokens
         total_cache_read += getattr(response.usage, "cache_read_input_tokens", 0) or 0
         total_cache_create += getattr(response.usage, "cache_creation_input_tokens", 0) or 0
+
+        logger.debug("llm_turn", extra={
+            "event": "llm_turn",
+            "thread_id": str(thread_id),
+            "turn": turn_number,
+            "stop_reason": response.stop_reason,
+            "input_tokens": response.usage.input_tokens,
+            "output_tokens": response.usage.output_tokens,
+            "cache_read_tokens": getattr(response.usage, "cache_read_input_tokens", 0) or 0,
+            "cache_creation_tokens": getattr(response.usage, "cache_creation_input_tokens", 0) or 0,
+        })
 
         if response.stop_reason == "end_turn":
             # Extract rationale from the final text block if present
@@ -192,6 +222,12 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
             tool_input = block.input
             tools_called.append(tool_name)
 
+            logger.info("tool_dispatched", extra={
+                "event": "tool_dispatched",
+                "thread_id": str(thread_id),
+                "tool_name": tool_name,
+            })
+
             try:
                 handler = _TOOL_DISPATCH[tool_name]
                 tool_result = await handler(session, thread_id, **tool_input)
@@ -201,7 +237,12 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
                     "content": str(tool_result),
                 })
             except Exception as exc:
-                logger.error("Tool %s failed: %s", tool_name, exc)
+                logger.error("tool_failed", extra={
+                    "event": "tool_failed",
+                    "thread_id": str(thread_id),
+                    "tool_name": tool_name,
+                    "error": str(exc),
+                })
                 await session.rollback()
                 tool_results.append({
                     "type": "tool_result",
@@ -227,4 +268,18 @@ async def run_agent(thread_id: uuid.UUID, session: AsyncSession) -> AgentDecisio
     thread.status = Status.pending_review
 
     await session.commit()
+
+    logger.info("agent_run_completed", extra={
+        "event": "agent_run_completed",
+        "thread_id": str(thread_id),
+        "decision_id": str(decision.id),
+        "action": decision.action.value,
+        "turns": turn_number,
+        "tools_called": tools_called,
+        "total_input_tokens": total_input,
+        "total_output_tokens": total_output,
+        "total_cache_read_tokens": total_cache_read,
+        "total_cache_creation_tokens": total_cache_create,
+    })
+
     return decision
