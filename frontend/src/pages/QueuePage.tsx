@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import { pl } from 'date-fns/locale'
-import { useThreads } from '@/hooks/useThreads'
+import { useThreads, useAdminStats } from '@/hooks/useThreads'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Tooltip } from '@/components/ui/tooltip'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { sendDemoMessage, getBriefingText, getBriefingAudio, getAdminStats } from '@/lib/api'
+import { sendDemoMessage, getBriefingText, getBriefingAudio } from '@/lib/api'
 import type { Status, Priority, Category, Thread } from '@/lib/types'
 
 const PRIORITY_CLASS: Record<Priority, string> = {
@@ -144,11 +144,7 @@ export default function QueuePage() {
     category: category || undefined,
   })
 
-  const { data: stats } = useQuery({
-    queryKey: ['admin-stats'],
-    queryFn: getAdminStats,
-    refetchInterval: 30_000,
-  })
+  const { data: stats } = useAdminStats()
 
   const sortedThreads = data?.items
     ? [...data.items].sort((a, b) => {
