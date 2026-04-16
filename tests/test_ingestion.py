@@ -147,3 +147,91 @@ async def test_find_or_create_thread_ignores_different_sender(session):
             s, sender_ref="alice@gmail.com", embedding=vec
         )
         assert thread.id != existing_thread.id
+
+
+# ---------------------------------------------------------------------------
+# Step 5 — ingest_message
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_ingest_message_persists_message_and_thread(session):
+    async with session as s:
+        with patch(
+            "app.services.ingestion._embeddings.generate_embedding",
+            new=AsyncMock(return_value=FAKE_EMBEDDING),
+        ):
+            msg, thread = await ingest_message(
+                session=s,
+                channel="email",
+                raw_content="The gate is broken",
+                subject="Broken gate",
+                sender_ref="jan@gmail.com",
+            )
+            await s.commit()
+
+        result = await s.execute(select(Message).where(Message.id == msg.id))
+        saved = result.scalar_one()
+        assert saved.raw_content == "The gate is broken"
+        assert saved.sender_type == SenderType.resident
+        assert saved.subject == "Broken gate"
+
+        tm_result = await s.execute(
+            select(ThreadMessage).where(ThreadMessage.message_id == msg.id)
+        )
+        tm = tm_result.scalar_one()
+        assert tm.thread_id == thread.id
+
+
+@pytest.mark.asyncio
+async def test_ingest_message_detects_board_sender(session):
+    async with session as s:
+        with patch(
+            "app.services.ingestion._embeddings.generate_embedding",
+            new=AsyncMock(return_value=FAKE_EMBEDDING),
+        ):
+            msg, _ = await ingest_message(
+                session=s,
+                channel="email",
+                raw_content="Board decision on roof repair",
+                subject="Roof decision",
+                sender_ref="zarzad@wspolnota-mokotow.pl",
+            )
+            await s.commit()
+    assert msg.sender_type == SenderType.board
+
+
+@pytest.mark.asyncio
+async def test_ingest_voicemail_without_transcription_embeds_raw_content(session):
+    async with session as s:
+        with patch(
+            "app.services.ingestion._embeddings.generate_embedding",
+            new=AsyncMock(return_value=FAKE_EMBEDDING),
+        ) as mock_embed:
+            msg, _ = await ingest_message(
+                session=s,
+                channel="voicemail",
+                raw_content="https://s3.example/call.mp3",
+                sender_ref="+48888100200",
+            )
+            await s.commit()
+        mock_embed.assert_called_once_with("https://s3.example/call.mp3")
+        assert msg.transcription is None
+
+
+@pytest.mark.asyncio
+async def test_ingest_voicemail_with_transcription_embeds_transcription(session):
+    async with session as s:
+        with patch(
+            "app.services.ingestion._embeddings.generate_embedding",
+            new=AsyncMock(return_value=FAKE_EMBEDDING),
+        ) as mock_embed:
+            await ingest_message(
+                session=s,
+                channel="voicemail",
+                raw_content="https://s3.example/call.mp3",
+                sender_ref="+48888100200",
+                transcription="Water in basement",
+                transcription_confidence=0.72,
+            )
+        mock_embed.assert_called_once_with("Water in basement")
