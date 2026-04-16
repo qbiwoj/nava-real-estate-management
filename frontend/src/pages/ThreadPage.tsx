@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import type { Action, Priority, Status, Message } from '@/lib/types'
 
 const PRIORITY_CLASS: Record<Priority, string> = {
@@ -181,44 +182,64 @@ export default function ThreadPage() {
             </Button>
           </div>
         ) : (
-          <div className="border rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-2">
+          <div className="border rounded-lg overflow-hidden">
+            {/* Header */}
+            <div className="px-4 py-3 flex items-center gap-2 border-b bg-background">
               <Badge className={ACTION_CLASS[decision.action]}>{ACTION_LABEL[decision.action]}</Badge>
               <span className="text-xs text-muted-foreground font-mono">{decision.model_id}</span>
               {(decision.few_shot_ids?.length ?? 0) > 0 && (
                 <span className="text-xs text-muted-foreground">
-                  · na podstawie {decision.few_shot_ids?.length} korekty
+                  · {decision.few_shot_ids?.length} korekty
                 </span>
               )}
             </div>
-            <div className="text-sm text-muted-foreground prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
-              <ReactMarkdown>{decision.rationale}</ReactMarkdown>
+
+            {/* Rationale */}
+            <div className="px-4 py-3 bg-muted/30 max-h-72 overflow-y-auto">
+              <div className="prose prose-sm max-w-none text-foreground
+                prose-p:my-1 prose-ul:my-1 prose-li:my-0
+                prose-headings:text-foreground prose-headings:font-semibold
+                prose-code:bg-muted prose-code:px-1 prose-code:rounded prose-code:text-xs
+                prose-table:w-full prose-table:text-sm prose-table:border-collapse
+                prose-thead:border-b
+                prose-th:py-1.5 prose-th:px-2 prose-th:text-left prose-th:font-medium prose-th:text-muted-foreground
+                prose-td:py-1.5 prose-td:px-2 prose-td:border-b prose-td:border-border/50">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{decision.rationale}</ReactMarkdown>
+              </div>
             </div>
 
-            {decision.action === 'draft_reply' && (
-              <div className="space-y-2">
-                <Textarea
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  rows={4}
-                  disabled={done}
-                  placeholder="Projekt odpowiedzi…"
-                />
-                <Button
-                  size="sm"
-                  onClick={() => sendReply.mutate({ channel: 'sms', final_body: draft })}
-                  disabled={!draft.trim() || done || sendReply.isPending}
-                >
-                  {sendReply.isPending ? 'Wysyłanie…' : 'Wyślij odpowiedź'}
-                </Button>
-                {done && (
-                  <p className="text-xs text-muted-foreground">Odpowiedź już wysłana.</p>
-                )}
-              </div>
-            )}
           </div>
         )}
       </section>
+
+      {/* Draft reply */}
+      {decision?.action === 'draft_reply' && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Projekt odpowiedzi</h2>
+          <div className="border rounded-lg overflow-hidden">
+            <Textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={5}
+              disabled={done}
+              placeholder="Projekt odpowiedzi…"
+              className="border-0 rounded-none focus-visible:ring-0 resize-none"
+            />
+            <div className="px-3 py-2 border-t bg-muted/20 flex items-center gap-3">
+              <Button
+                size="sm"
+                onClick={() => sendReply.mutate({ channel: 'sms', final_body: draft })}
+                disabled={!draft.trim() || done || sendReply.isPending}
+              >
+                {sendReply.isPending ? 'Wysyłanie…' : 'Wyślij odpowiedź'}
+              </Button>
+              {done && (
+                <p className="text-xs text-muted-foreground">Odpowiedź już wysłana.</p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Feedback */}
       {decision && !done && (
