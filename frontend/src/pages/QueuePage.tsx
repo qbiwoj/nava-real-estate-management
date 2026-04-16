@@ -53,16 +53,11 @@ const CATEGORY_LABEL: Record<string, string> = {
 }
 
 function preview(thread: Thread): string {
-  const msg = [...thread.messages].sort(
-    (a, b) => new Date(b.received_at).getTime() - new Date(a.received_at).getTime(),
-  )[0]
-  if (!msg) return '—'
-  const text = msg.transcription ?? msg.raw_content
-  return text.length > 80 ? text.slice(0, 80) + '…' : text
+  return thread.preview ?? '—'
 }
 
 function sender(thread: Thread): string {
-  return thread.messages[0]?.sender_ref ?? '—'
+  return thread.sender_ref ?? '—'
 }
 
 export default function QueuePage() {

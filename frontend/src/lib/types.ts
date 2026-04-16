@@ -34,7 +34,7 @@ export interface AgentDecision {
   rationale: string
   draft_reply: string | null
   model_id: string
-  few_shot_ids: string[]
+  few_shot_ids: string[] | undefined
   is_current: boolean
   created_at: string
 }
@@ -58,9 +58,12 @@ export interface Thread {
   status: Status
   created_at: string
   updated_at: string
-  messages: Message[]
+  messages: Message[] | undefined
   current_decision: AgentDecision | null
   feedback_history: AdminFeedback[]
+  // present in list responses
+  sender_ref?: string | null
+  preview?: string | null
 }
 
 export interface PaginatedResponse<T> {

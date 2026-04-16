@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import ReactMarkdown from 'react-markdown'
 import type { Action, Priority, Status, Message } from '@/lib/types'
 
 const PRIORITY_CLASS: Record<Priority, string> = {
@@ -127,7 +128,7 @@ export default function ThreadPage() {
       {/* Messages */}
       <section className="space-y-3">
         <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Wiadomości</h2>
-        {[...thread.messages]
+        {[...(thread.messages ?? [])]
           .sort((a, b) => new Date(a.received_at).getTime() - new Date(b.received_at).getTime())
           .map((msg) => (
             <div key={msg.id} className="border rounded-lg p-4 space-y-1">
@@ -184,13 +185,15 @@ export default function ThreadPage() {
             <div className="flex items-center gap-2">
               <Badge className={ACTION_CLASS[decision.action]}>{ACTION_LABEL[decision.action]}</Badge>
               <span className="text-xs text-muted-foreground font-mono">{decision.model_id}</span>
-              {decision.few_shot_ids.length > 0 && (
+              {(decision.few_shot_ids?.length ?? 0) > 0 && (
                 <span className="text-xs text-muted-foreground">
-                  · na podstawie {decision.few_shot_ids.length} korekty
+                  · na podstawie {decision.few_shot_ids?.length} korekty
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">{decision.rationale}</p>
+            <div className="text-sm text-muted-foreground prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+              <ReactMarkdown>{decision.rationale}</ReactMarkdown>
+            </div>
 
             {decision.action === 'draft_reply' && (
               <div className="space-y-2">

@@ -43,12 +43,32 @@ async def list_threads(
     total = total_result.scalar_one()
 
     offset = (page - 1) * page_size
-    paginated = query.order_by(Thread.created_at.desc()).offset(offset).limit(page_size)
+    paginated = (
+        query.options(selectinload(Thread.messages))
+        .order_by(Thread.created_at.desc())
+        .offset(offset)
+        .limit(page_size)
+    )
     result = await session.execute(paginated)
     threads = result.scalars().all()
 
+    def _summary(t: Thread) -> ThreadSummary:
+        first = sorted(t.messages, key=lambda m: m.received_at)[0] if t.messages else None
+        text = (first.transcription or first.raw_content) if first else None
+        preview = (text[:80] + "…") if text and len(text) > 80 else text
+        return ThreadSummary(
+            id=t.id,
+            category=t.category,
+            priority=t.priority,
+            status=t.status,
+            created_at=t.created_at,
+            updated_at=t.updated_at,
+            sender_ref=first.sender_ref if first else None,
+            preview=preview,
+        )
+
     return ThreadListResponse(
-        items=[ThreadSummary.model_validate(t) for t in threads],
+        items=[_summary(t) for t in threads],
         total=total,
         page=page,
         page_size=page_size,

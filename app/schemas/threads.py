@@ -42,6 +42,8 @@ class ThreadSummary(BaseModel):
     status: Status
     created_at: datetime
     updated_at: datetime
+    sender_ref: str | None = None
+    preview: str | None = None
 
 
 class ThreadResponse(BaseModel):
