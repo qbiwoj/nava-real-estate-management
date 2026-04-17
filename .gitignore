@@ -19,3 +19,6 @@ wheels/
 MASTER_SPEC.md
 CLAUDE.md
 .serena
+.claude/
+.vscode/
+.pytest_cache/

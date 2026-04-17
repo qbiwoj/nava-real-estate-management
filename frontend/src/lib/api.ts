@@ -24,31 +24,9 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function getThreads(filters: ThreadFilters = {}): Promise<PaginatedResponse<Thread>> {
   const params = new URLSearchParams()
-  const pMap = {
-    "Pilny": "urgent",
-    "Wysoki": "high",
-    "Średni": "medium",
-    "Niski": "low"
-  }  
-  const sMap = {
-    "Nowy": "new",
-    "Do sprawdzenia": "pending_review",
-    "Odpowiedziano": "replied",
-    "Zamknięty": "resolved",
-    "Eskalowany": "escalated",
-  }  
-  const cMap = {
-    "Usterka": "maintenance",
-    "Płatność": "payment",
-    "Hałas": "noise_complaint",
-    "Najem": "lease",
-    "Ogólne": "general",
-    "Dostawca": "supplier",
-    "Inne": "other",
-  }
-  if (filters.status) params.set('status', sMap[filters.status])
-  if (filters.priority) params.set('priority', pMap[filters.priority])
-  if (filters.category) params.set('category', cMap[filters.category])
+  if (filters.status) params.set('status', filters.status)
+  if (filters.priority) params.set('priority', filters.priority)
+  if (filters.category) params.set('category', filters.category)
   if (filters.page) params.set('page', String(filters.page))
   if (filters.size) params.set('size', String(filters.size ?? 50))
   const qs = params.toString()
