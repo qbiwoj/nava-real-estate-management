@@ -164,6 +164,8 @@ async def group_messages(
     message_ids: list[str],
 ) -> dict:
     added = []
+    source_thread_ids: set[uuid.UUID] = set()
+
     for mid_str in message_ids:
         mid = uuid.UUID(mid_str)
         existing = await session.execute(
@@ -173,10 +175,29 @@ async def group_messages(
             )
         )
         if existing.scalar_one_or_none() is None:
+            # Find which other threads own this message before adding it here
+            source_rows = await session.execute(
+                select(ThreadMessage.thread_id).where(
+                    ThreadMessage.message_id == mid,
+                    ThreadMessage.thread_id != thread_id,
+                )
+            )
+            for row in source_rows:
+                source_thread_ids.add(row.thread_id)
+
             session.add(ThreadMessage(thread_id=thread_id, message_id=mid))
             added.append(mid_str)
+
+    # Mark source threads as resolved — they've been consolidated here
+    for src_id in source_thread_ids:
+        src_thread = await session.get(Thread, src_id)
+        if src_thread is not None and src_thread.status not in (
+            Status.resolved, Status.replied
+        ):
+            src_thread.status = Status.resolved
+
     await session.flush()
-    return {"ok": True, "added": added}
+    return {"ok": True, "added": added, "resolved_threads": [str(t) for t in source_thread_ids]}
 
 
 async def draft_reply(

@@ -127,8 +127,9 @@ export default function QueuePage() {
         channel === 'email'
           ? { channel: 'email' as const, from: from.trim(), subject: subject.trim(), body: body.trim() }
           : { channel: 'sms' as const, from: from.trim(), body: body.trim() }
-      await sendDemoMessage(payload)
+      const { thread_id } = await sendDemoMessage(payload)
       await queryClient.invalidateQueries({ queryKey: ['threads'] })
+      await queryClient.invalidateQueries({ queryKey: ['thread', thread_id] })
       setShowForm(false)
       resetForm()
     } catch (e) {
@@ -283,11 +284,11 @@ export default function QueuePage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">Wszystkie statusy</SelectItem>
-            <SelectItem value="Nowy">Nowy</SelectItem>
-            <SelectItem value="Do sprawdzenia">Do sprawdzenia</SelectItem>
-            <SelectItem value="Odpowiedziano">Odpowiedziano</SelectItem>
-            <SelectItem value="Zamknięty">Zamknięty</SelectItem>
-            <SelectItem value="Eskalowany">Eskalowany</SelectItem>
+            <SelectItem value="new">Nowy</SelectItem>
+            <SelectItem value="pending_review">Do sprawdzenia</SelectItem>
+            <SelectItem value="replied">Odpowiedziano</SelectItem>
+            <SelectItem value="resolved">Zamknięty</SelectItem>
+            <SelectItem value="escalated">Eskalowany</SelectItem>
           </SelectContent>
         </Select>
 
@@ -297,10 +298,10 @@ export default function QueuePage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">Wszystkie priorytety</SelectItem>
-            <SelectItem value="Pilny">Pilny</SelectItem>
-            <SelectItem value="Wysoki">Wysoki</SelectItem>
-            <SelectItem value="Średni">Średni</SelectItem>
-            <SelectItem value="Niski">Niski</SelectItem>
+            <SelectItem value="urgent">Pilny</SelectItem>
+            <SelectItem value="high">Wysoki</SelectItem>
+            <SelectItem value="medium">Średni</SelectItem>
+            <SelectItem value="low">Niski</SelectItem>
           </SelectContent>
         </Select>
 
@@ -310,13 +311,13 @@ export default function QueuePage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">Wszystkie kategorie</SelectItem>
-            <SelectItem value="Usterka">Usterka</SelectItem>
-            <SelectItem value="Płatność">Płatność</SelectItem>
-            <SelectItem value="Hałas">Hałas</SelectItem>
-            <SelectItem value="Najem">Najem</SelectItem>
-            <SelectItem value="Ogólne">Ogólne</SelectItem>
-            <SelectItem value="Dostawca">Dostawca</SelectItem>
-            <SelectItem value="Inne">Inne</SelectItem>
+            <SelectItem value="maintenance">Usterka</SelectItem>
+            <SelectItem value="payment">Płatność</SelectItem>
+            <SelectItem value="noise_complaint">Hałas</SelectItem>
+            <SelectItem value="lease">Najem</SelectItem>
+            <SelectItem value="general">Ogólne</SelectItem>
+            <SelectItem value="supplier">Dostawca</SelectItem>
+            <SelectItem value="other">Inne</SelectItem>
           </SelectContent>
         </Select>
         {stats && (

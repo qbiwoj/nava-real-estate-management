@@ -15,6 +15,7 @@ export function useThread(id: string) {
     queryKey: ['thread', id],
     queryFn: () => getThread(id),
     refetchInterval: 2_000,
+    staleTime: 0,
     enabled: !!id,
   })
 }

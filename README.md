@@ -4,8 +4,7 @@ Demo systemu zarządzania nieruchomościami opartego na AI. Administrator otrzym
 
 ## Wymagania
 
-- Docker
-- [uv](https://docs.astral.sh/uv/) (Python package manager)
+- Docker & Docker Compose
 - Node.js 18+
 - Klucze API: `ANTHROPIC_API_KEY` i `OPENAI_API_KEY`
 
@@ -19,26 +18,29 @@ cp .env.example .env
 # Uzupełnij .env — wpisz ANTHROPIC_API_KEY i OPENAI_API_KEY
 ```
 
-Następnie uruchom wszystko jedną komendą:
+```bash
+# Terminal 1 — baza danych + backend (migracje + seed uruchamiają się automatycznie)
+docker-compose up
+```
 
 ```bash
-docker-compose up -d && uv run alembic upgrade head && uv run python -m app.seed && uvicorn app.main:app --reload &
-cd frontend && npm install && npm run dev
+# Terminal 2 — frontend
+cd frontend && npm install && npm start
+# Otwórz http://localhost:5173
 ```
 
 Panel admina będzie dostępny pod adresem **http://localhost:5173** z 16 wstępnie załadowanymi wiadomościami od mieszkańców, pogrupowanymi w wątki i przetworzonymi przez agenta.
 
 ---
 
-## Co robi każdy krok
+## Reset danych
 
-| Krok | Co się dzieje |
-|---|---|
-| `docker-compose up -d` | Uruchamia Postgres 16 z pgvector na porcie 5432 |
-| `uv run alembic upgrade head` | Tworzy wszystkie tabele i enumy |
-| `uv run python -m app.seed` | Ładuje 16 wiadomości z `data.csv`, grupuje je w wątki i uruchamia agenta AI na każdym |
-| `uvicorn app.main:app --reload` | Backend API na porcie 8000 |
-| `npm install && npm run dev` | Frontend na porcie 5173 |
+Seed uruchamia się automatycznie przy starcie backendu, ale pomija już istniejące dane. Aby zacząć od zera ze świeżymi danymi:
+
+```bash
+docker-compose down -v   # usuwa wolumen bazy danych
+docker-compose up        # migruje i seeduje ponownie
+```
 
 ---
 
