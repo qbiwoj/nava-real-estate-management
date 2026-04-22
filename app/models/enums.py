@@ -33,6 +33,7 @@ class Priority(str, enum.Enum):
 
 class Status(str, enum.Enum):
     new = "new"
+    processing = "processing"
     pending_review = "pending_review"
     replied = "replied"
     resolved = "resolved"

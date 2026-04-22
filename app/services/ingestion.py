@@ -55,38 +55,45 @@ async def find_or_create_thread(
     threshold: float | None = None,
 ) -> Thread:
     """
-    Return an existing Thread if the closest message from `sender_ref` has
-    cosine distance < threshold, else create and return a new Thread.
+    Return an existing Thread if the closest message has cosine distance below
+    the applicable threshold, else create and return a new Thread.
+    Same-sender threshold: 0.25. Cross-sender threshold: 0.40.
     Does NOT commit — caller is responsible.
     """
-    effective_threshold = (
-        threshold if threshold is not None else 0.25
-    )
+    same_sender_threshold = threshold if threshold is not None else 0.25
+    cross_sender_threshold = 0.40
 
     sql = text("""
-        SELECT tm.thread_id, m.embedding <=> CAST(:query_vec AS vector) AS distance
+        SELECT tm.thread_id, m.sender_ref, m.embedding <=> CAST(:query_vec AS vector) AS distance
         FROM messages m
         JOIN thread_messages tm ON tm.message_id = m.id
-        WHERE m.sender_ref = :sender_ref
-          AND m.embedding IS NOT NULL
+        WHERE m.embedding IS NOT NULL
         ORDER BY distance ASC
         LIMIT 1
     """)
 
     result = await session.execute(
         sql,
-        {"query_vec": str(embedding), "sender_ref": sender_ref},
+        {"query_vec": str(embedding)},
     )
     row = result.fetchone()
 
-    if row is not None and row.distance < effective_threshold:
+    if row is not None:
+        applicable_threshold = (
+            same_sender_threshold if row.sender_ref == sender_ref else cross_sender_threshold
+        )
+    else:
+        applicable_threshold = same_sender_threshold
+
+    if row is not None and row.distance < applicable_threshold:
         thread = await session.get(Thread, row.thread_id)
         logger.info("thread_matched", extra={
             "event": "thread_matched",
             "sender_ref": sender_ref,
             "thread_id": str(thread.id),
             "distance": round(float(row.distance), 4),
-            "threshold": effective_threshold,
+            "threshold": applicable_threshold,
+            "cross_sender": row.sender_ref != sender_ref,
         })
         return thread
 
@@ -98,7 +105,7 @@ async def find_or_create_thread(
         "sender_ref": sender_ref,
         "thread_id": str(thread.id),
         "distance": round(float(row.distance), 4) if row else None,
-        "threshold": effective_threshold,
+        "threshold": applicable_threshold,
     })
     return thread
 

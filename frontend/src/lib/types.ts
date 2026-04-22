@@ -10,7 +10,7 @@ export type Category =
   | 'supplier'
   | 'other'
 export type Priority = 'low' | 'medium' | 'high' | 'urgent'
-export type Status = 'new' | 'pending_review' | 'replied' | 'resolved' | 'escalated'
+export type Status = 'new' | 'processing' | 'pending_review' | 'replied' | 'resolved' | 'escalated'
 export type Action = 'draft_reply' | 'escalate' | 'group_only' | 'no_action'
 export type FeedbackType = 'approved' | 'corrected' | 'overridden'
 

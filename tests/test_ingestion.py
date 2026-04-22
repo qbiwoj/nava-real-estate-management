@@ -125,8 +125,8 @@ async def test_find_or_create_thread_creates_new_for_dissimilar_topic(session):
 
 
 @pytest.mark.asyncio
-async def test_find_or_create_thread_ignores_different_sender(session):
-    """Identical vectors but different sender_ref → new thread."""
+async def test_find_or_create_thread_groups_different_sender_same_topic(session):
+    """Identical vectors from different senders → same thread (cross-sender threshold 0.40)."""
     vec = [0.5] * 1536
 
     async with session as s:
@@ -146,7 +146,43 @@ async def test_find_or_create_thread_ignores_different_sender(session):
         thread = await find_or_create_thread(
             s, sender_ref="alice@gmail.com", embedding=vec
         )
-        assert thread.id != existing_thread.id
+        assert thread.id == existing_thread.id
+
+
+@pytest.mark.asyncio
+async def test_find_or_create_thread_cross_sender_uses_loose_threshold(session):
+    """Cross-sender match at distance ~0.35 (above same-sender 0.25, below cross-sender 0.40) → groups."""
+    # Two vectors with cosine distance ~0.35: rotate slightly in 2D
+    import math
+    angle = math.acos(1 - 0.35)  # cosine distance 0.35 → cos(angle) = 0.65
+    base_vec = [1.0] + [0.0] * 1535
+    close_vec = [math.cos(angle), math.sin(angle)] + [0.0] * 1534
+
+    async with session as s:
+        existing_msg = Message(
+            channel=Channel.email,
+            raw_content="Heater broken",
+            sender_ref="bob@gmail.com",
+            sender_type=SenderType.resident,
+            embedding=base_vec,
+        )
+        existing_thread = Thread(priority=Priority.low, status=Status.new)
+        s.add_all([existing_msg, existing_thread])
+        await s.flush()
+        s.add(ThreadMessage(thread_id=existing_thread.id, message_id=existing_msg.id))
+        await s.flush()
+
+        # Same sender → rejected (0.35 > 0.25)
+        thread_same = await find_or_create_thread(
+            s, sender_ref="bob@gmail.com", embedding=close_vec
+        )
+        assert thread_same.id != existing_thread.id, "Same sender at 0.35 should NOT match"
+
+        # Cross sender → accepted (0.35 < 0.40)
+        thread_cross = await find_or_create_thread(
+            s, sender_ref="alice@gmail.com", embedding=close_vec
+        )
+        assert thread_cross.id == existing_thread.id, "Cross-sender at 0.35 should match"
 
 
 # ---------------------------------------------------------------------------
@@ -281,8 +317,8 @@ async def test_follow_up_message_grouped_into_same_thread(session):
 
 
 @pytest.mark.asyncio
-async def test_supplier_and_resident_never_grouped(session):
-    """Supplier invoice should not merge with a resident thread even if vectors are identical."""
+async def test_supplier_and_resident_grouped_if_same_topic(session):
+    """Cross-sender grouping: supplier and resident with near-identical embeddings land in same thread."""
     vec = [0.5] * 1536
 
     async with session as s:
@@ -298,11 +334,11 @@ async def test_supplier_and_resident_never_grouped(session):
 
             msg_supplier, t_supplier = await ingest_message(
                 s, channel="email",
-                raw_content="Invoice FS/2024/0892 for gas inspection",
+                raw_content="Gate broken — repair crew notified",
                 sender_ref="biuro@bud-serwis.pl",
             )
             await s.commit()
 
     assert msg_resident.sender_type == SenderType.resident
     assert msg_supplier.sender_type == SenderType.supplier
-    assert t_supplier.id != t_resident.id
+    assert t_supplier.id == t_resident.id

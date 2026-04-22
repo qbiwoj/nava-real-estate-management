@@ -4,6 +4,8 @@ import logging
 import uuid
 
 from app.database import AsyncSessionLocal
+from app.models.thread import Thread
+from app.models.enums import Status
 from app.services.agent import run_agent
 
 logger = logging.getLogger(__name__)
@@ -21,6 +23,10 @@ async def run_agent_background(thread_id: uuid.UUID) -> None:
     })
     try:
         async with AsyncSessionLocal() as session:
+            thread = await session.get(Thread, thread_id)
+            if thread:
+                thread.status = Status.processing
+                await session.commit()
             decision = await run_agent(thread_id, session)
         logger.info("agent_task_completed", extra={
             "event": "agent_task_completed",
@@ -33,3 +39,8 @@ async def run_agent_background(thread_id: uuid.UUID) -> None:
             "event": "agent_task_failed",
             "thread_id": str(thread_id),
         })
+        async with AsyncSessionLocal() as session:
+            thread = await session.get(Thread, thread_id)
+            if thread and thread.status == Status.processing:
+                thread.status = Status.new
+                await session.commit()

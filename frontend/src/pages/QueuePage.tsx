@@ -31,6 +31,7 @@ const PRIORITY_LABEL: Record<Priority, string> = {
 
 const STATUS_CLASS: Record<Status, string> = {
   new: 'bg-blue-100 text-blue-800',
+  processing: 'bg-purple-100 text-purple-800',
   pending_review: 'bg-amber-100 text-amber-800',
   replied: 'bg-green-100 text-green-800',
   resolved: 'bg-gray-100 text-gray-600',
@@ -39,6 +40,7 @@ const STATUS_CLASS: Record<Status, string> = {
 
 const STATUS_LABEL: Record<Status, string> = {
   new: 'Nowy',
+  processing: 'Przetwarzam…',
   pending_review: 'Do sprawdzenia',
   replied: 'Odpowiedziano',
   resolved: 'Zamknięty',
