@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
+from app.models.briefing import Briefing
 from app.models.voice_session import VoiceSession
 from app.schemas.voice import (
     VoiceBriefingTextResponse,
@@ -13,7 +14,7 @@ from app.schemas.voice import (
     VoiceInboundResponse,
     VoiceSessionResponse,
 )
-from app.services.voice import format_as_ssml, generate_queue_briefing, synthesize_speech
+from app.services.voice import format_as_ssml, generate_queue_briefing, get_or_generate_briefing, synthesize_speech
 
 router = APIRouter(prefix="/api/v1/voice", tags=["voice"])
 
@@ -29,7 +30,7 @@ async def voice_inbound(
     if existing.scalar_one_or_none() is not None:
         raise HTTPException(status_code=409, detail="call_sid already exists")
 
-    briefing_text, thread_ids = await generate_queue_briefing(session)
+    briefing_text, thread_ids = await get_or_generate_briefing(session)
     ssml = format_as_ssml(briefing_text)
 
     voice_session = VoiceSession(
@@ -47,7 +48,19 @@ async def voice_inbound(
 async def briefing_text(
     session: AsyncSession = Depends(get_session),
 ):
+    text, thread_ids = await get_or_generate_briefing(session)
+    return VoiceBriefingTextResponse(text=text, threads_covered=thread_ids)
+
+
+@router.post("/briefing/refresh", response_model=VoiceBriefingTextResponse)
+async def refresh_briefing(
+    session: AsyncSession = Depends(get_session),
+):
+    """Force-generate a new briefing and store it, replacing the cached one."""
+    await session.execute(delete(Briefing))
     text, thread_ids = await generate_queue_briefing(session)
+    session.add(Briefing(briefing_text=text, threads_covered=thread_ids))
+    await session.commit()
     return VoiceBriefingTextResponse(text=text, threads_covered=thread_ids)
 
 
@@ -55,7 +68,7 @@ async def briefing_text(
 async def briefing_audio(
     session: AsyncSession = Depends(get_session),
 ):
-    text, _ = await generate_queue_briefing(session)
+    text, _ = await get_or_generate_briefing(session)
     audio = await synthesize_speech(text)
     return Response(content=audio, media_type="audio/mpeg")
 

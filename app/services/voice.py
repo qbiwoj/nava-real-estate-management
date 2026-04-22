@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.models import Message, Thread, ThreadMessage
+from app.models.briefing import Briefing
 from app.models.enums import Priority, Status
 
 anthropic_client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
@@ -94,6 +95,24 @@ async def generate_queue_briefing(
             break
 
     return briefing_text, thread_ids
+
+
+async def get_or_generate_briefing(
+    session: AsyncSession,
+) -> tuple[str, list[uuid.UUID]]:
+    """Return the latest stored briefing, generating and persisting one if none exists."""
+    result = await session.execute(
+        select(Briefing).order_by(Briefing.generated_at.desc()).limit(1)
+    )
+    existing = result.scalar_one_or_none()
+    if existing is not None:
+        return existing.briefing_text, existing.threads_covered
+
+    text, thread_ids = await generate_queue_briefing(session)
+    briefing = Briefing(briefing_text=text, threads_covered=thread_ids)
+    session.add(briefing)
+    await session.commit()
+    return text, thread_ids
 
 
 def format_as_ssml(text: str) -> str:

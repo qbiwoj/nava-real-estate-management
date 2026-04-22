@@ -5,6 +5,7 @@ from app.models.agent_decision import AgentDecision
 from app.models.admin_feedback import AdminFeedback
 from app.models.outbound_reply import OutboundReply
 from app.models.voice_session import VoiceSession
+from app.models.briefing import Briefing
 
 __all__ = [
     "Message",
@@ -14,4 +15,5 @@ __all__ = [
     "AdminFeedback",
     "OutboundReply",
     "VoiceSession",
+    "Briefing",
 ]
