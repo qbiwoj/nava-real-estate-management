@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -17,7 +17,9 @@ from app.schemas.threads import (
     ThreadSummary,
 )
 from app.schemas.decisions import DecisionResponse
+from app.models.enums import Status
 from app.services.agent import run_agent
+from app.tasks.agent_runner import run_agent_background
 
 router = APIRouter(prefix="/api/v1/threads", tags=["threads"])
 
@@ -82,6 +84,20 @@ async def list_threads(
         page=page,
         page_size=page_size,
     )
+
+
+@router.post("/run-unprocessed", status_code=202)
+async def run_unprocessed_threads(
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_session),
+):
+    result = await session.execute(
+        select(Thread.id).where(Thread.status == Status.new)
+    )
+    thread_ids = result.scalars().all()
+    for tid in thread_ids:
+        background_tasks.add_task(run_agent_background, tid)
+    return {"queued": len(thread_ids)}
 
 
 @router.get("/{thread_id}", response_model=ThreadResponse)

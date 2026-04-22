@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getThreads, getThread, runAgent, submitFeedback, sendReply, getAdminStats } from '@/lib/api'
+import { getThreads, getThread, runAgent, runUnprocessed, submitFeedback, sendReply, getAdminStats } from '@/lib/api'
 import type { ThreadFilters, FeedbackPayload, SendReplyPayload } from '@/lib/types'
 
 export function useThreads(filters: ThreadFilters = {}) {
@@ -25,6 +25,14 @@ export function useRunAgent(threadId: string) {
   return useMutation({
     mutationFn: () => runAgent(threadId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['thread', threadId] }),
+  })
+}
+
+export function useRunUnprocessed() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: runUnprocessed,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['threads'] }),
   })
 }
 

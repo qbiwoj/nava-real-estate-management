@@ -45,6 +45,10 @@ export function runAgent(id: string): Promise<void> {
   return apiFetch(`/threads/${id}/run-agent`, { method: 'POST' })
 }
 
+export function runUnprocessed(): Promise<{ queued: number }> {
+  return apiFetch('/threads/run-unprocessed', { method: 'POST' })
+}
+
 export function submitFeedback(id: string, payload: FeedbackPayload): Promise<void> {
   return apiFetch(`/threads/${id}/feedback`, { method: 'POST', body: JSON.stringify(payload) })
 }

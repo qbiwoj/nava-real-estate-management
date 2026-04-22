@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import { pl } from 'date-fns/locale'
-import { useThreads, useAdminStats } from '@/hooks/useThreads'
+import { useThreads, useAdminStats, useRunUnprocessed } from '@/hooks/useThreads'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -146,6 +146,7 @@ export default function QueuePage() {
   })
 
   const { data: stats } = useAdminStats()
+  const runUnprocessed = useRunUnprocessed()
 
   const sortedThreads = data?.items
     ? [...data.items].sort((a, b) => {
@@ -167,9 +168,26 @@ export default function QueuePage() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-semibold">Panel administratora</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleBriefing} disabled={briefingLoading}>
-            {briefingLoading ? 'Generuję…' : 'Wygeneruj przegląd'}
-          </Button>
+          <Tooltip content="Uruchamia agenta AI na wszystkich wątkach ze statusem &quot;Nowy&quot; - pomija już przetworzone.">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => runUnprocessed.mutate()}
+              disabled={runUnprocessed.isPending}
+            >
+              {runUnprocessed.isPending ? 'Uruchamianie…' : 'Przeanalizuj nowe wiadomości'}
+            </Button>
+          </Tooltip>
+          {runUnprocessed.data && (
+            <span className="text-sm text-muted-foreground">
+              Uruchomiono dla {runUnprocessed.data.queued} wątków
+            </span>
+          )}
+          <Tooltip content="Generuje głosowy przegląd wątków przetworzonych przez agenta (status: Do sprawdzenia, Odpowiedziano, Eskalowany lub Zamkniety).">
+            <Button variant="outline" size="sm" onClick={handleBriefing} disabled={briefingLoading}>
+              {briefingLoading ? 'Generuję…' : 'Wygeneruj przegląd'}
+            </Button>
+          </Tooltip>
           <Button variant="outline" size="sm" onClick={() => { resetForm(); setShowForm(true) }}>
             + Dodaj wiadomość
           </Button>
@@ -280,7 +298,9 @@ export default function QueuePage() {
 
         <Select value={status} onValueChange={(v) => setStatus(v as Status | '')}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="Wszystkie statusy" />
+            <SelectValue placeholder="Wszystkie statusy">
+              {status ? STATUS_LABEL[status as Status] : 'Wszystkie statusy'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">Wszystkie statusy</SelectItem>
@@ -294,7 +314,9 @@ export default function QueuePage() {
 
         <Select value={priority} onValueChange={(v) => setPriority(v as Priority | '')}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="Wszystkie priorytety" />
+            <SelectValue placeholder="Wszystkie priorytety">
+              {priority ? PRIORITY_LABEL[priority as Priority] : 'Wszystkie priorytety'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">Wszystkie priorytety</SelectItem>
@@ -307,7 +329,9 @@ export default function QueuePage() {
 
         <Select value={category} onValueChange={(v) => setCategory(v as Category | '')}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="Wszystkie kategorie" />
+            <SelectValue placeholder="Wszystkie kategorie">
+              {category ? CATEGORY_LABEL[category] : 'Wszystkie kategorie'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">Wszystkie kategorie</SelectItem>
